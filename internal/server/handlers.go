@@ -20,7 +20,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
 	if len(uri) != updateURILen {
-		http.Error(w, "Request not recognized!", http.StatusBadRequest)
+		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}
 
@@ -34,7 +34,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//проверяем тип метрики
 	metricType := uri[mTypePos]
 	if len(metricType) == 0 || !CheckType(metricType) {
-		http.Error(w, "The type of the metric is not defined!", http.StatusNotFound)
+		http.Error(w, "The type of the metric is not defined!", http.StatusBadRequest)
 		return
 	}
 

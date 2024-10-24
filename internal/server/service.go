@@ -18,7 +18,7 @@ func CheckValue(mType, mValue string) error {
 		}
 
 	case counter:
-		if _, err := strconv.ParseInt(mValue, 36, 64); err != nil {
+		if _, err := strconv.ParseInt(mValue, 10, 64); err != nil {
 			return err
 		}
 	}

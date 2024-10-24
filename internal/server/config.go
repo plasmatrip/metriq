@@ -6,6 +6,6 @@ const (
 	mNamePos     = 3
 	mValuePos    = 4
 
-	gauge   = "gouge"
+	gauge   = "gauge"
 	counter = "counter"
 )
