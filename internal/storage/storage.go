@@ -1,30 +1,70 @@
 package storage
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
 const (
-	Gauge   = "gauge"
-	Counter = "counter"
+	PollCount = "PollCount"
+)
+
+type (
+	Gauge   float64
+	counter int64
 )
 
 type Repository interface {
-	// Add(key string, value any)
-	// Delete(key string)
-	Update(mType string, key string, value int64)
+	Update(key string, value any)
+	GetAll() map[string]any
+	Print()
 }
+
+// type metric struct {
+// 	mType string
+// 	value any
+// }
 
 type MemStorage struct {
-	Gauge   map[string]float64
-	Counter map[string]int64
-}
-
-func (ms *MemStorage) Update(mType string, key string, value int64) {
-	fmt.Println(mType)
+	mu      sync.Mutex
+	storage map[string]any
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
-		Gauge:   map[string]float64{},
-		Counter: map[string]int64{},
+		storage: make(map[string]any),
+		mu:      sync.Mutex{},
+	}
+}
+
+func (ms *MemStorage) Update(key string, value any) {
+	ms.mu.Lock()
+	defer func() {
+		ms.mu.Unlock()
+		ms.updateCounter()
+	}()
+	ms.storage[key] = value
+}
+
+func (ms *MemStorage) updateCounter() {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+	count, ok := ms.storage[PollCount]
+	if !ok {
+		ms.storage[PollCount] = counter(0)
+		return
+	}
+	ms.storage[PollCount] = count.(counter) + 1
+}
+
+func (ms *MemStorage) GetAll() map[string]any {
+	return ms.storage
+}
+
+func (ms *MemStorage) Print() {
+	fmt.Println("====================")
+	for k, v := range ms.storage {
+		fmt.Printf("%s update: %s = %v\r\n", time.Now().Format("15:04:05"), k, v)
 	}
 }

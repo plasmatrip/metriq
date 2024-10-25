@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/plasmatrip/metriq/internal/storage"
 )
 
-func UpdateHandler(w http.ResponseWriter, r *http.Request) {
+type Handlers struct {
+	Repo storage.Repository
+}
+
+func NewHandlers(repo storage.Repository) *Handlers {
+	return &Handlers{Repo: repo}
+}
+
+func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
 		return
@@ -45,8 +55,10 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.Repo.Update(metricName, metricValue)
+
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("Successful data update!"))
+	_, err := w.Write([]byte(fmt.Sprint("Successful data update! ", metricType, " ", metricName, " ", metricValue, "\r\n")))
 	if err != nil {
 		fmt.Println(err.Error())
 	}

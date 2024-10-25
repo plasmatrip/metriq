@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"github.com/plasmatrip/metriq/internal/agent"
@@ -8,31 +9,27 @@ import (
 )
 
 func main() {
-	// httpClient := http.Client()
-	controller := agent.NewSender(storage.NewStorage())
 
-	readChan := make(chan struct{})
-	sendChan := make(chan struct{})
+	controller := agent.NewController(storage.NewStorage())
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
-			readChan <- struct{}{}
+			controller.UpdateMetrics()
+			// controller.Repo.Print()
 			time.Sleep(agent.ReadTimeout * time.Second)
 		}
 	}()
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
-			sendChan <- struct{}{}
+			controller.SendMetrics()
 			time.Sleep(agent.SendTimeout * time.Second)
 		}
 	}()
-
-	for {
-		select {
-		case <-readChan:
-			controller.UpdateMetrics()
-		case <-sendChan:
-			controller.SendMetrics()
-		}
-	}
+	wg.Wait()
 }

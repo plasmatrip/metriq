@@ -2,12 +2,10 @@ package server
 
 import (
 	"strconv"
-
-	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func CheckType(mType string) bool {
-	return mType == storage.Gauge || mType == storage.Counter
+	return mType == Gauge || mType == Counter
 }
 
 func CheckName(mName string) bool {
@@ -16,12 +14,12 @@ func CheckName(mName string) bool {
 
 func CheckValue(mType, mValue string) error {
 	switch mType {
-	case storage.Gauge:
+	case Gauge:
 		if _, err := strconv.ParseFloat(mValue, 64); err != nil {
 			return err
 		}
 
-	case storage.Counter:
+	case Counter:
 		if _, err := strconv.ParseInt(mValue, 10, 64); err != nil {
 			return err
 		}
