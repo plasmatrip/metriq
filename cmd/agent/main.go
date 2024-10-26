@@ -28,7 +28,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics(server.Url); err != nil {
+			if err := controller.SendMetrics(server.URL); err != nil {
 				fmt.Print(err)
 			}
 			time.Sleep(agent.SendTimeout * time.Second)
