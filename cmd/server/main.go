@@ -3,18 +3,22 @@ package main
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/plasmatrip/metriq/internal/server"
+	"github.com/plasmatrip/metriq/internal/server/handlers"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func main() {
-	handlers := server.NewHandlers(storage.NewStorage())
+	r := chi.NewRouter()
 
-	mux := http.NewServeMux()
+	handlers := handlers.NewHandlers(storage.NewStorage())
 
-	mux.HandleFunc(`/update/`, handlers.UpdateHandler)
+	r.Post("/update/*", handlers.UpdateHandler)
+	r.Get("/value/*", handlers.ValueHandler)
+	r.Get("/", handlers.MetricsHandler)
 
-	err := http.ListenAndServe(server.Address+":"+server.Port, mux)
+	err := http.ListenAndServe(server.Address+":"+server.Port, r)
 	if err != nil {
 		panic(err)
 	}

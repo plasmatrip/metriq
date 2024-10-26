@@ -6,10 +6,12 @@ const (
 
 	URL = "http://" + Address + ":" + Port
 
-	updateURILen = 5
-	mTypePos     = 2
-	mNamePos     = 3
-	mValuePos    = 4
+	UpdateURILen = 5
+	ValueURILen  = 4
+
+	RequestTypePos  = 2
+	RequestNamePos  = 3
+	RequestValuePos = 4
 
 	Gauge   = "gauge"
 	Counter = "counter"
