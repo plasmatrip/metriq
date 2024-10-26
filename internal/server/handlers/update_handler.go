@@ -29,17 +29,17 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//проверяем имя метрики
-	metricName := uri[server.RequestNamePos]
-	if err := server.CheckMetricName(metricName); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
 	//проверяем тип метрики
 	metricType := uri[server.RequestTypePos]
 	if err := server.CheckMetricType(metricType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//проверяем имя метрики
+	metricName := uri[server.RequestNamePos]
+	if err := server.CheckMetricName(metricName); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
