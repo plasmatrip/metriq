@@ -11,19 +11,21 @@ func TestStorage_UpdateCounter(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		value int64
-		want  int64
+		key   string
+		value Counter
+		want  Counter
 	}{
 		{
 			name:  "Increment counter",
+			key:   "key",
 			value: 1,
 			want:  1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			storage.UpdateCounter(tt.value)
-			assert.Equal(t, tt.want, storage.GetCounter())
+			storage.UpdateCounter(tt.key, tt.value)
+			assert.Equal(t, tt.want, storage.GetCounter(tt.key))
 		})
 	}
 }

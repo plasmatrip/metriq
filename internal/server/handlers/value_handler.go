@@ -41,7 +41,7 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		value := h.Repo.GetGauge(metricName)
 		formatedValue = strconv.FormatFloat(float64(value), 'f', -1, 64)
 	case server.Counter:
-		value := h.Repo.GetCounter()
+		value := h.Repo.GetCounter(metricName)
 		formatedValue = strconv.FormatInt(int64(value), 10)
 	}
 

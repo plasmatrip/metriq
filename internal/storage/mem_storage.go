@@ -3,16 +3,18 @@ package storage
 import "sync"
 
 type MemStorage struct {
-	Mu        sync.Mutex
-	Storage   map[string]Gauge
-	PollCount Counter
+	Mu             sync.Mutex
+	GaugeStorage   map[string]Gauge
+	CounterStorage map[string]Counter
+	// PollCount Counter
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
-		Mu:        sync.Mutex{},
-		Storage:   make(map[string]Gauge),
-		PollCount: 0,
+		Mu:             sync.Mutex{},
+		GaugeStorage:   make(map[string]Gauge),
+		CounterStorage: make(map[string]Counter),
+		// PollCount:    0,
 	}
 }
 
@@ -20,25 +22,33 @@ func (ms *MemStorage) UpdateGauge(key string, value Gauge) {
 	ms.Mu.Lock()
 	defer func() {
 		ms.Mu.Unlock()
-		ms.UpdateCounter(1)
+		ms.UpdateCounter(PollCount, 1)
 	}()
-	ms.Storage[key] = value
+	ms.GaugeStorage[key] = value
 }
 
-func (ms *MemStorage) UpdateCounter(value int64) {
+func (ms *MemStorage) UpdateCounter(key string, value Counter) {
 	ms.Mu.Lock()
 	defer ms.Mu.Unlock()
-	ms.PollCount += Counter(value)
+	if v, ok := ms.CounterStorage[key]; ok {
+		ms.CounterStorage[key] = v + value
+		return
+	}
+	ms.CounterStorage[key] = value
 }
 
 func (ms *MemStorage) GetGauges() map[string]Gauge {
-	return ms.Storage
+	return ms.GaugeStorage
+}
+
+func (ms *MemStorage) GetCounters() map[string]Counter {
+	return ms.CounterStorage
 }
 
 func (ms *MemStorage) GetGauge(key string) Gauge {
-	return ms.Storage[key]
+	return ms.GaugeStorage[key]
 }
 
-func (ms *MemStorage) GetCounter() int64 {
-	return int64(ms.PollCount)
+func (ms *MemStorage) GetCounter(key string) Counter {
+	return ms.CounterStorage[key]
 }

@@ -16,6 +16,10 @@ func CheckName(mName string) bool {
 	return ok
 }
 
+func AddName(mName string) {
+	storage.Metrics[mName] = struct{}{}
+}
+
 func CheckValue(mType, mValue string) error {
 	switch mType {
 	case Gauge:

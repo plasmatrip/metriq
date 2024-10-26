@@ -43,6 +43,10 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !server.CheckName(metricName) {
+		server.AddName(metricName)
+	}
+
 	//проверяем значение метрики
 	metricValue := uri[server.RequestValuePos]
 	if err := server.CheckValue(metricType, metricValue); err != nil {
@@ -56,7 +60,7 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		h.Repo.UpdateGauge(metricName, storage.Gauge(value))
 	case server.Counter:
 		value, _ := strconv.ParseInt(metricValue, 10, 64)
-		h.Repo.UpdateCounter(value)
+		h.Repo.UpdateCounter(metricName, storage.Counter(value))
 	}
 
 	w.WriteHeader(http.StatusOK)

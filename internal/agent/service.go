@@ -26,10 +26,11 @@ func (c *Controller) SendMetrics(server string) error {
 		c.send(url)
 	}
 
-	url := fmt.Sprint(server, "/update/counter/", storage.PollCount, "/", c.Repo.GetCounter())
-	if err := c.send(url); err != nil {
-		return err
+	for v, k := range c.Repo.GetCounters() {
+		url := fmt.Sprint(server, "/update/counter", "/", v, "/", k)
+		c.send(url)
 	}
+
 	return nil
 }
 

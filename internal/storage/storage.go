@@ -43,8 +43,9 @@ var Metrics = map[string]struct{}{
 
 type Repository interface {
 	UpdateGauge(key string, value Gauge)
-	UpdateCounter(value int64)
+	UpdateCounter(key string, count Counter)
 	GetGauges() map[string]Gauge
 	GetGauge(key string) Gauge
-	GetCounter() int64
+	GetCounters() map[string]Counter
+	GetCounter(key string) Counter
 }

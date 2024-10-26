@@ -17,9 +17,9 @@ type MockStorage struct {
 func NewMockStorage() *MockStorage {
 	return &MockStorage{
 		storage.MemStorage{
-			Mu:        sync.Mutex{},
-			Storage:   map[string]storage.Gauge{"metric": storage.Gauge(100)},
-			PollCount: 1,
+			Mu:             sync.Mutex{},
+			GaugeStorage:   map[string]storage.Gauge{"metric": storage.Gauge(100)},
+			CounterStorage: map[string]storage.Counter{"counter": storage.Counter(100)},
 		},
 	}
 }
@@ -27,7 +27,7 @@ func NewMockStorage() *MockStorage {
 func TestService_SendMetrics(t *testing.T) {
 	mock := NewMockStorage()
 	mock.UpdateGauge("metric", storage.Gauge(100))
-	mock.UpdateCounter(200)
+	mock.UpdateCounter("counter", storage.Counter(200))
 	controller := NewController(&MockStorage{})
 
 	t.Run("Send metrics test", func(t *testing.T) {
