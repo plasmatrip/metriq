@@ -32,9 +32,15 @@ func CheckValue(mType, mValue string) error {
 }
 
 func CheckMetricName(name string) error {
-	// if len(name) == 0 || !CheckName(name) {
-	if len(name) == 0 {
+	if !CheckName(name) {
 		return errors.New(`the name of the metric is not defined`)
+	}
+	return nil
+}
+
+func MetricNameNotEmpty(name string) error {
+	if len(name) == 0 {
+		return errors.New(`the name of the metric is empty`)
 	}
 	return nil
 }

@@ -38,7 +38,7 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	//проверяем имя метрики
 	metricName := uri[server.RequestNamePos]
-	if err := server.CheckMetricName(metricName); err != nil {
+	if err := server.MetricNameNotEmpty(metricName); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
