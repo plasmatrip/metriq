@@ -1,9 +1,7 @@
 package storage
 
 import (
-	"fmt"
 	"sync"
-	"time"
 )
 
 const (
@@ -12,59 +10,62 @@ const (
 
 type (
 	Gauge   float64
-	counter int64
+	Counter int64
 )
 
 type Repository interface {
-	Update(key string, value any)
-	GetAll() map[string]any
-	Print()
+	UpdateGauge(key string, value Gauge)
+	UpdateCounter(value int64)
+	GetGauges() map[string]Gauge
+	GetGauge(key string) Gauge
+	GetCounter() int64
+	// Print()
 }
 
-// type metric struct {
-// 	mType string
-// 	value any
-// }
-
 type MemStorage struct {
-	mu      sync.Mutex
-	storage map[string]any
+	Mu        sync.Mutex
+	Storage   map[string]Gauge
+	PollCount Counter
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
-		storage: make(map[string]any),
-		mu:      sync.Mutex{},
+		Mu:        sync.Mutex{},
+		Storage:   make(map[string]Gauge),
+		PollCount: 0,
 	}
 }
 
-func (ms *MemStorage) Update(key string, value any) {
-	ms.mu.Lock()
+func (ms *MemStorage) UpdateGauge(key string, value Gauge) {
+	ms.Mu.Lock()
 	defer func() {
-		ms.mu.Unlock()
-		ms.updateCounter()
+		ms.Mu.Unlock()
+		ms.UpdateCounter(1)
 	}()
-	ms.storage[key] = value
+	ms.Storage[key] = value
 }
 
-func (ms *MemStorage) updateCounter() {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
-	count, ok := ms.storage[PollCount]
-	if !ok {
-		ms.storage[PollCount] = counter(0)
-		return
-	}
-	ms.storage[PollCount] = count.(counter) + 1
+func (ms *MemStorage) UpdateCounter(value int64) {
+	ms.Mu.Lock()
+	defer ms.Mu.Unlock()
+	ms.PollCount += Counter(value)
 }
 
-func (ms *MemStorage) GetAll() map[string]any {
-	return ms.storage
+func (ms *MemStorage) GetGauges() map[string]Gauge {
+	return ms.Storage
 }
 
-func (ms *MemStorage) Print() {
-	fmt.Println("====================")
-	for k, v := range ms.storage {
-		fmt.Printf("%s update: %s = %v\r\n", time.Now().Format("15:04:05"), k, v)
-	}
+func (ms *MemStorage) GetGauge(key string) Gauge {
+	return ms.Storage[key]
 }
+
+func (ms *MemStorage) GetCounter() int64 {
+	return int64(ms.PollCount)
+}
+
+// func (ms *MemStorage) Print() {
+// 	fmt.Println("====================")
+// 	for k, v := range ms.storage {
+// 		fmt.Printf("%s update: %s = %v\r\n", time.Now().Format("15:04:05"), k, v)
+// 	}
+// }

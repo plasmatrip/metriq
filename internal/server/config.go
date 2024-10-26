@@ -4,6 +4,8 @@ const (
 	Port    = "8080"
 	Address = "localhost"
 
+	Url = "http://" + Address + ":" + Port
+
 	updateURILen = 5
 	mTypePos     = 2
 	mNamePos     = 3

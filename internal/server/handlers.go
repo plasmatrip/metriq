@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/plasmatrip/metriq/internal/storage"
@@ -22,7 +23,8 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := r.Header[`Content-Type`]; !ok {
+	contentType := r.Header.Get(`Content-Type`)
+	if !strings.Contains(`text/plain`, contentType) {
 		http.Error(w, "Only the 'text/plain' content type is allowed!", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -55,7 +57,14 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Repo.Update(metricName, metricValue)
+	switch metricType {
+	case Gauge:
+		value, _ := strconv.ParseFloat(metricValue, 64)
+		h.Repo.UpdateGauge(metricName, storage.Gauge(value))
+	case Counter:
+		value, _ := strconv.ParseInt(metricValue, 10, 64)
+		h.Repo.UpdateCounter(value)
+	}
 
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(fmt.Sprint("Successful data update! ", metricType, " ", metricName, " ", metricValue, "\r\n")))

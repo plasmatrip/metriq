@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/plasmatrip/metriq/internal/agent"
+	"github.com/plasmatrip/metriq/internal/server"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
@@ -19,7 +21,6 @@ func main() {
 		defer wg.Done()
 		for {
 			controller.UpdateMetrics()
-			// controller.Repo.Print()
 			time.Sleep(agent.ReadTimeout * time.Second)
 		}
 	}()
@@ -27,7 +28,9 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			controller.SendMetrics()
+			if err := controller.SendMetrics(server.Url); err != nil {
+				fmt.Print(err)
+			}
 			time.Sleep(agent.SendTimeout * time.Second)
 		}
 	}()
