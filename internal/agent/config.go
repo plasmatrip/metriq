@@ -4,8 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/plasmatrip/metriq/internal/types"
+	"github.com/plasmatrip/metriq/internal/server"
 )
 
 const (
@@ -26,9 +27,18 @@ type Config struct {
 func NewConfig() *Config {
 	config := new(Config)
 
-	server := new(types.SrvAddr)
-	_ = flag.Value(server)
-	flag.Var(server, "a", "Server address host:port")
+	var srv string
+	flag.StringVar(&srv, "a", "localhost:8080", "Server address host:port")
+	flag.Parse()
+	args := strings.Split(srv, ":")
+
+	fmt.Println(srv)
+
+	fmt.Println(args)
+
+	// server := new(types.SrvAddr)
+	// _ = flag.Value(server)
+	// flag.Var(server, "a", "Server address host:port")
 	flag.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
 	flag.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
 	flag.Parse()
@@ -46,13 +56,13 @@ func NewConfig() *Config {
 		config.ReportInterval = reportInterval
 	}
 
-	if len(server.Host) == 0 || len(server.Port) == 0 {
-		server.Host = host
-		server.Port = port
-	}
+	// if len(server.Host) == 0 || len(server.Port) == 0 {
+	// 	server.Host = host
+	// 	server.Port = port
+	// }
 
-	config.Host = server.Host
-	config.Port = server.Port
+	config.Host = args[0]
+	config.Port = args[1]
 	config.URL = "http://" + server.Host + ":" + server.Port
 
 	return config

@@ -3,9 +3,7 @@ package server
 import (
 	"flag"
 	"fmt"
-	"os"
-
-	"github.com/plasmatrip/metriq/internal/types"
+	"strings"
 )
 
 const (
@@ -33,23 +31,34 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	server := new(types.SrvAddr)
-	_ = flag.Value(server)
-	flag.Var(server, "a", "Server address host:port")
+	var srv string
+	flag.StringVar(&srv, "a", "localhost:8080", "Server address host:port")
 	flag.Parse()
+	args := strings.Split(srv, ":")
 
-	if len(flag.Args()) > 0 {
-		fmt.Println("Unknown flag(s): ", flag.Args())
-		os.Exit(1)
-	}
+	fmt.Println(srv)
 
-	if len(server.Host) == 0 || len(server.Port) == 0 {
-		server.Host = Host
-		server.Port = Port
-	}
+	fmt.Println(args)
+
+	// server := new(types.SrvAddr)
+	// _ = flag.Value(server)
+	// flag.Var(server, "a", "Server address host:port")
+	// flag.Parse()
+
+	// if len(flag.Args()) > 0 {
+	// 	fmt.Println("Unknown flag(s): ", flag.Args())
+	// 	os.Exit(1)
+	// }
+
+	// if len(server.Host) == 0 || len(server.Port) == 0 {
+	// 	server.Host = Host
+	// 	server.Port = Port
+	// }
+
+	// if len(args)
 
 	return &Config{
-		Host: server.Host,
-		Port: server.Port,
+		Host: args[0],
+		Port: args[1],
 	}
 }
