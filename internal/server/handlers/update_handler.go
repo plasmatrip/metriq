@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/server"
 	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/types"
 )
 
 func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,27 +25,27 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
-	if len(uri) != config.UpdateURILen {
+	if len(uri) != server.UpdateURILen {
 		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}
 
 	//проверяем тип метрики
-	metricType := uri[config.RequestTypePos]
+	metricType := uri[server.RequestTypePos]
 	if err := server.CheckMetricType(metricType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//проверяем имя метрики
-	metricName := uri[config.RequestNamePos]
+	metricName := uri[server.RequestNamePos]
 	if len(metricName) == 0 {
 		http.Error(w, "the name of the metric is empty", http.StatusNotFound)
 		return
 	}
 
 	//проверяем значение метрики
-	metricValue := uri[config.RequestValuePos]
+	metricValue := uri[server.RequestValuePos]
 	if err := server.CheckValue(metricType, metricValue); err != nil {
 		http.Error(w, "Unknown value!", http.StatusBadRequest)
 		return
@@ -53,9 +53,9 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	var value any
 	switch metricType {
-	case config.Gauge:
+	case types.Gauge:
 		value, _ = strconv.ParseFloat(metricValue, 64)
-	case config.Counter:
+	case types.Counter:
 		value, _ = strconv.ParseInt(metricValue, 10, 64)
 	}
 	h.Repo.Update(metricName, storage.Metric{MetricType: metricType, Value: value})

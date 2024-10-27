@@ -1,55 +1,51 @@
 package storage
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/plasmatrip/metriq/internal/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
-// func TestStorage_UpdateCounter(t *testing.T) {
-// 	storage := NewStorage()
+func TestStorage_Update(t *testing.T) {
+	storage := NewStorage()
 
-// 	tests := []struct {
-// 		name  string
-// 		key   string
-// 		value Counter
-// 		want  Counter
-// 	}{
-// 		{
-// 			name:  "Increment counter",
-// 			key:   "key",
-// 			value: 1,
-// 			want:  1,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			storage.UpdateCounter(tt.key, tt.value)
-// 			assert.Equal(t, tt.want, storage.GetCounter(tt.key))
-// 		})
-// 	}
-// }
-
-// func TestStorage_UpdateGauge(t *testing.T) {
-// 	storage := NewStorage()
-
-// 	tests := []struct {
-// 		name  string
-// 		key   string
-// 		value Gauge
-// 		want  Gauge
-// 	}{
-// 		{
-// 			name:  "Update metric",
-// 			key:   "key",
-// 			value: 1,
-// 			want:  1,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			storage.UpdateGauge(tt.key, tt.value)
-// 			assert.Equal(t, tt.want, storage.GetGauge(tt.key))
-// 		})
-// 	}
-// }
+	tests := []struct {
+		name       string
+		key        string
+		value      any
+		want       any
+		metricType string
+	}{
+		{
+			name:       "Increment counter",
+			key:        "key",
+			value:      1,
+			want:       1,
+			metricType: types.Counter,
+		},
+		{
+			name:       "Gauge counter",
+			key:        "key",
+			value:      1,
+			want:       1,
+			metricType: types.Gauge,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			switch tt.metricType {
+			case types.Counter:
+				value := tt.value.(int64)
+				storage.Update(tt.key, Metric{MetricType: tt.metricType, Value: value})
+			case types.Gauge:
+				value := tt.value.(float64)
+				storage.Update(tt.key, Metric{MetricType: tt.metricType, Value: value})
+			}
+			metric, ok := storage.Get(tt.key)
+			require.True(t, ok)
+			assert.Equal(t, tt.want, metric.Value)
+		})
+	}
+}

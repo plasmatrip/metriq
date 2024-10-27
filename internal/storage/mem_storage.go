@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/plasmatrip/metriq/internal/config"
+	"github.com/plasmatrip/metriq/internal/types"
 )
 
 type Metric struct {
@@ -28,10 +28,10 @@ func (ms *MemStorage) Update(key string, metric Metric) error {
 	ms.Mu.Lock()
 	defer ms.Mu.Unlock()
 	switch metric.MetricType {
-	case config.Gauge:
+	case types.Gauge:
 		ms.Storage[key] = metric
-		ms.updateCounter(config.PollCount, Metric{MetricType: config.Counter, Value: int64(1)})
-	case config.Counter:
+		ms.updateCounter(types.PollCount, Metric{MetricType: types.Counter, Value: int64(1)})
+	case types.Counter:
 		ms.updateCounter(key, metric)
 	}
 	return nil

@@ -4,21 +4,21 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/plasmatrip/metriq/internal/config"
+	"github.com/plasmatrip/metriq/internal/types"
 )
 
 func CheckType(mType string) bool {
-	return mType == config.Gauge || mType == config.Counter
+	return mType == types.Gauge || mType == types.Counter
 }
 
 func CheckValue(mType, mValue string) error {
 	switch mType {
-	case config.Gauge:
+	case types.Gauge:
 		if _, err := strconv.ParseFloat(mValue, 64); err != nil {
 			return err
 		}
 
-	case config.Counter:
+	case types.Counter:
 		if _, err := strconv.ParseInt(mValue, 10, 64); err != nil {
 			return err
 		}

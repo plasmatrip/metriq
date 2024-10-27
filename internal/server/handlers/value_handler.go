@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/server"
+	"github.com/plasmatrip/metriq/internal/types"
 )
 
 func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,20 +17,16 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
-	if len(uri) != config.ValueURILen {
+	if len(uri) != server.ValueURILen {
 		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}
 
 	//проверяем имя метрики
-	metricName := uri[config.RequestNamePos]
-	// if err := server.CheckMetricName(metricName); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusNotFound)
-	// 	return
-	// }
+	metricName := uri[server.RequestNamePos]
 
 	//проверяем тип метрики
-	metricType := uri[config.RequestTypePos]
+	metricType := uri[server.RequestTypePos]
 	if err := server.CheckMetricType(metricType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -44,14 +40,14 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	var formatedValue string
 	switch metric.MetricType {
-	case config.Gauge:
+	case types.Gauge:
 		value, ok := metric.Value.(float64)
 		if !ok {
 			http.Error(w, "failed to cast the received value to type float64", http.StatusInternalServerError)
 			return
 		}
 		formatedValue = strconv.FormatFloat(float64(value), 'f', -1, 64)
-	case config.Counter:
+	case types.Counter:
 		value, ok := metric.Value.(int64)
 		if !ok {
 			http.Error(w, "failed to cast the received value to type int64", http.StatusInternalServerError)
