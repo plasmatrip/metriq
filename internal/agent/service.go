@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
@@ -21,16 +22,18 @@ func NewController(repo storage.Repository) *Controller {
 }
 
 func (c *Controller) SendMetrics(server string) error {
-	for v, k := range c.Repo.GetGauges() {
-		url := fmt.Sprint(server, "/update/gauge", "/", v, "/", k)
-		c.send(url)
+	for name, metric := range c.Repo.GetAll() {
+		var path string
+		switch metric.MetricType {
+		case config.Gauge:
+			path = "/update/gauge/"
+		case config.Counter:
+			path = "/update/counter/"
+		}
+		if err := c.send(fmt.Sprint(server, path, name, "/", metric.Value)); err != nil {
+			return err
+		}
 	}
-
-	for v, k := range c.Repo.GetCounters() {
-		url := fmt.Sprint(server, "/update/counter", "/", v, "/", k)
-		c.send(url)
-	}
-
 	return nil
 }
 
@@ -62,32 +65,32 @@ func (c *Controller) UpdateMetrics() {
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
 
-	c.Repo.UpdateGauge("Alloc", storage.Gauge(rtm.Alloc))
-	c.Repo.UpdateGauge("TotalAlloc", storage.Gauge(rtm.TotalAlloc))
-	c.Repo.UpdateGauge("Sys", storage.Gauge(rtm.Sys))
-	c.Repo.UpdateGauge("Lookups", storage.Gauge(rtm.Lookups))
-	c.Repo.UpdateGauge("Mallocs", storage.Gauge(rtm.Mallocs))
-	c.Repo.UpdateGauge("Frees", storage.Gauge(rtm.Frees))
-	c.Repo.UpdateGauge("HeapAlloc", storage.Gauge(rtm.HeapAlloc))
-	c.Repo.UpdateGauge("HeapSys", storage.Gauge(rtm.HeapSys))
-	c.Repo.UpdateGauge("HeapIdle", storage.Gauge(rtm.HeapIdle))
-	c.Repo.UpdateGauge("HeapInuse", storage.Gauge(rtm.HeapInuse))
-	c.Repo.UpdateGauge("HeapReleased", storage.Gauge(rtm.HeapReleased))
-	c.Repo.UpdateGauge("HeapObjects", storage.Gauge(rtm.HeapObjects))
-	c.Repo.UpdateGauge("StackInuse", storage.Gauge(rtm.StackInuse))
-	c.Repo.UpdateGauge("StackSys", storage.Gauge(rtm.StackSys))
-	c.Repo.UpdateGauge("MSpanInuse", storage.Gauge(rtm.MSpanInuse))
-	c.Repo.UpdateGauge("MSpanSys", storage.Gauge(rtm.MSpanSys))
-	c.Repo.UpdateGauge("MCacheInuse", storage.Gauge(rtm.MCacheInuse))
-	c.Repo.UpdateGauge("MCacheSys", storage.Gauge(rtm.MCacheSys))
-	c.Repo.UpdateGauge("BuckHashSys", storage.Gauge(rtm.BuckHashSys))
-	c.Repo.UpdateGauge("GCSys", storage.Gauge(rtm.GCSys))
-	c.Repo.UpdateGauge("OtherSys", storage.Gauge(rtm.OtherSys))
-	c.Repo.UpdateGauge("NextGC", storage.Gauge(rtm.NextGC))
-	c.Repo.UpdateGauge("LastGC", storage.Gauge(rtm.LastGC))
-	c.Repo.UpdateGauge("PauseTotalNs", storage.Gauge(rtm.PauseTotalNs))
-	c.Repo.UpdateGauge("NumGC", storage.Gauge(rtm.NumGC))
-	c.Repo.UpdateGauge("NumForcedGC", storage.Gauge(rtm.NumForcedGC))
-	c.Repo.UpdateGauge("GCCPUFraction", storage.Gauge(rtm.GCCPUFraction))
-	c.Repo.UpdateGauge("RandomValue", storage.Gauge(rand.Float64()))
+	c.Repo.Update("Alloc", storage.Metric{MetricType: config.Gauge, Value: rtm.Alloc})
+	c.Repo.Update("TotalAlloc", storage.Metric{MetricType: config.Gauge, Value: rtm.TotalAlloc})
+	c.Repo.Update("Sys", storage.Metric{MetricType: config.Gauge, Value: rtm.Sys})
+	c.Repo.Update("Lookups", storage.Metric{MetricType: config.Gauge, Value: rtm.Lookups})
+	c.Repo.Update("Mallocs", storage.Metric{MetricType: config.Gauge, Value: rtm.Mallocs})
+	c.Repo.Update("Frees", storage.Metric{MetricType: config.Gauge, Value: rtm.Frees})
+	c.Repo.Update("HeapAlloc", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapAlloc})
+	c.Repo.Update("HeapSys", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapSys})
+	c.Repo.Update("HeapIdle", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapIdle})
+	c.Repo.Update("HeapInuse", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapInuse})
+	c.Repo.Update("HeapReleased", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapReleased})
+	c.Repo.Update("HeapObjects", storage.Metric{MetricType: config.Gauge, Value: rtm.HeapObjects})
+	c.Repo.Update("StackInuse", storage.Metric{MetricType: config.Gauge, Value: rtm.StackInuse})
+	c.Repo.Update("StackSys", storage.Metric{MetricType: config.Gauge, Value: rtm.StackSys})
+	c.Repo.Update("MSpanInuse", storage.Metric{MetricType: config.Gauge, Value: rtm.MSpanInuse})
+	c.Repo.Update("MSpanSys", storage.Metric{MetricType: config.Gauge, Value: rtm.MSpanSys})
+	c.Repo.Update("MCacheInuse", storage.Metric{MetricType: config.Gauge, Value: rtm.MCacheInuse})
+	c.Repo.Update("MCacheSys", storage.Metric{MetricType: config.Gauge, Value: rtm.MCacheSys})
+	c.Repo.Update("BuckHashSys", storage.Metric{MetricType: config.Gauge, Value: rtm.BuckHashSys})
+	c.Repo.Update("GCSys", storage.Metric{MetricType: config.Gauge, Value: rtm.GCSys})
+	c.Repo.Update("OtherSys", storage.Metric{MetricType: config.Gauge, Value: rtm.OtherSys})
+	c.Repo.Update("NextGC", storage.Metric{MetricType: config.Gauge, Value: rtm.NextGC})
+	c.Repo.Update("LastGC", storage.Metric{MetricType: config.Gauge, Value: rtm.LastGC})
+	c.Repo.Update("PauseTotalNs", storage.Metric{MetricType: config.Gauge, Value: rtm.PauseTotalNs})
+	c.Repo.Update("NumGC", storage.Metric{MetricType: config.Gauge, Value: rtm.NumGC})
+	c.Repo.Update("NumForcedGC", storage.Metric{MetricType: config.Gauge, Value: rtm.NumForcedGC})
+	c.Repo.Update("GCCPUFraction", storage.Metric{MetricType: config.Gauge, Value: rtm.GCCPUFraction})
+	c.Repo.Update("RandomValue", storage.Metric{MetricType: config.Gauge, Value: rand.Float64()})
 }

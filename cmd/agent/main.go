@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/plasmatrip/metriq/internal/agent"
-	"github.com/plasmatrip/metriq/internal/server"
+	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
@@ -28,7 +28,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics(server.URL); err != nil {
+			if err := controller.SendMetrics(config.URL); err != nil {
 				fmt.Print(err)
 			}
 			time.Sleep(agent.SendTimeout * time.Second)

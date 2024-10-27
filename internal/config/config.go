@@ -1,4 +1,4 @@
-package server
+package config
 
 const (
 	Port    = "8080"
@@ -15,4 +15,11 @@ const (
 
 	Gauge   = "gauge"
 	Counter = "counter"
+
+	PollCount = "PollCount"
 )
+
+// type (
+// 	Gauge   float64
+// 	Counter int64
+// )

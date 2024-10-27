@@ -4,47 +4,24 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/config"
 )
 
 func CheckType(mType string) bool {
-	return mType == Gauge || mType == Counter
-}
-
-func CheckName(mName string) bool {
-	_, ok := storage.Metrics[mName]
-	return ok
-}
-
-func AddName(mName string) {
-	storage.Metrics[mName] = struct{}{}
+	return mType == config.Gauge || mType == config.Counter
 }
 
 func CheckValue(mType, mValue string) error {
 	switch mType {
-	case Gauge:
+	case config.Gauge:
 		if _, err := strconv.ParseFloat(mValue, 64); err != nil {
 			return err
 		}
 
-	case Counter:
+	case config.Counter:
 		if _, err := strconv.ParseInt(mValue, 10, 64); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func CheckMetricName(name string) error {
-	if !CheckName(name) {
-		return errors.New(`the name of the metric is not defined`)
-	}
-	return nil
-}
-
-func MetricNameNotEmpty(name string) error {
-	if len(name) == 0 {
-		return errors.New(`the name of the metric is empty`)
 	}
 	return nil
 }

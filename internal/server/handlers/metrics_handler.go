@@ -11,7 +11,7 @@ func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics := h.Repo.GetGauges()
+	metrics := h.Repo.GetAll()
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/plasmatrip/metriq/internal/server"
+	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/server/handlers"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
@@ -18,7 +18,7 @@ func main() {
 	r.Get("/value/*", handlers.ValueHandler)
 	r.Get("/", handlers.MetricsHandler)
 
-	err := http.ListenAndServe(server.Address+":"+server.Port, r)
+	err := http.ListenAndServe(config.Address+":"+config.Port, r)
 	if err != nil {
 		panic(err)
 	}

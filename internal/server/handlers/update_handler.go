@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/plasmatrip/metriq/internal/config"
 	"github.com/plasmatrip/metriq/internal/server"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
@@ -24,44 +25,40 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
-	if len(uri) != server.UpdateURILen {
+	if len(uri) != config.UpdateURILen {
 		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}
 
 	//проверяем тип метрики
-	metricType := uri[server.RequestTypePos]
+	metricType := uri[config.RequestTypePos]
 	if err := server.CheckMetricType(metricType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//проверяем имя метрики
-	metricName := uri[server.RequestNamePos]
-	if err := server.MetricNameNotEmpty(metricName); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	metricName := uri[config.RequestNamePos]
+	if len(metricName) == 0 {
+		http.Error(w, "the name of the metric is empty", http.StatusNotFound)
 		return
 	}
 
-	if !server.CheckName(metricName) {
-		server.AddName(metricName)
-	}
-
 	//проверяем значение метрики
-	metricValue := uri[server.RequestValuePos]
+	metricValue := uri[config.RequestValuePos]
 	if err := server.CheckValue(metricType, metricValue); err != nil {
 		http.Error(w, "Unknown value!", http.StatusBadRequest)
 		return
 	}
 
+	var value any
 	switch metricType {
-	case server.Gauge:
-		value, _ := strconv.ParseFloat(metricValue, 64)
-		h.Repo.UpdateGauge(metricName, storage.Gauge(value))
-	case server.Counter:
-		value, _ := strconv.ParseInt(metricValue, 10, 64)
-		h.Repo.UpdateCounter(metricName, storage.Counter(value))
+	case config.Gauge:
+		value, _ = strconv.ParseFloat(metricValue, 64)
+	case config.Counter:
+		value, _ = strconv.ParseInt(metricValue, 10, 64)
 	}
+	h.Repo.Update(metricName, storage.Metric{MetricType: metricType, Value: value})
 
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(fmt.Sprint("Successful data update! ", metricType, " ", metricName, " ", metricValue, "\r\n")))

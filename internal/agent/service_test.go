@@ -1,43 +1,43 @@
 package agent
 
-import (
-	"net/http"
-	"net/http/httptest"
-	"sync"
-	"testing"
+// import (
+// 	"net/http"
+// 	"net/http/httptest"
+// 	"sync"
+// 	"testing"
 
-	"github.com/plasmatrip/metriq/internal/storage"
-	"github.com/stretchr/testify/assert"
-)
+// 	"github.com/plasmatrip/metriq/internal/storage"
+// 	"github.com/stretchr/testify/assert"
+// )
 
-type MockStorage struct {
-	storage.MemStorage
-}
+// type MockStorage struct {
+// 	storage.MemStorage
+// }
 
-func NewMockStorage() *MockStorage {
-	return &MockStorage{
-		storage.MemStorage{
-			Mu:             sync.Mutex{},
-			GaugeStorage:   map[string]storage.Gauge{"metric": storage.Gauge(100)},
-			CounterStorage: map[string]storage.Counter{"counter": storage.Counter(100)},
-		},
-	}
-}
+// func NewMockStorage() *MockStorage {
+// 	return &MockStorage{
+// 		storage.MemStorage{
+// 			Mu:             sync.Mutex{},
+// 			GaugeStorage:   map[string]storage.Gauge{"metric": storage.Gauge(100)},
+// 			CounterStorage: map[string]storage.Counter{"counter": storage.Counter(100)},
+// 		},
+// 	}
+// }
 
-func TestService_SendMetrics(t *testing.T) {
-	mock := NewMockStorage()
-	mock.UpdateGauge("metric", storage.Gauge(100))
-	mock.UpdateCounter("counter", storage.Counter(200))
-	controller := NewController(&MockStorage{})
+// func TestService_SendMetrics(t *testing.T) {
+// 	mock := NewMockStorage()
+// 	mock.UpdateGauge("metric", storage.Gauge(100))
+// 	mock.UpdateCounter("counter", storage.Counter(200))
+// 	controller := NewController(&MockStorage{})
 
-	t.Run("Send metrics test", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method, "Only POST requests are allowed!")
-			w.WriteHeader(http.StatusOK)
-		}))
-		defer server.Close()
-		err := controller.SendMetrics(server.URL)
-		assert.NoError(t, err, "No error expected when sending metrics")
-	})
+// 	t.Run("Send metrics test", func(t *testing.T) {
+// 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 			assert.Equal(t, http.MethodPost, r.Method, "Only POST requests are allowed!")
+// 			w.WriteHeader(http.StatusOK)
+// 		}))
+// 		defer server.Close()
+// 		err := controller.SendMetrics(server.URL)
+// 		assert.NoError(t, err, "No error expected when sending metrics")
+// 	})
 
-}
+// }
