@@ -21,15 +21,15 @@ func TestStorage_Update(t *testing.T) {
 		{
 			name:       "Increment counter",
 			key:        "key",
-			value:      1,
-			want:       1,
+			value:      int64(1),
+			want:       int64(1),
 			metricType: types.Counter,
 		},
 		{
 			name:       "Gauge counter",
 			key:        "key",
-			value:      1,
-			want:       1,
+			value:      float64(1),
+			want:       float64(1),
 			metricType: types.Gauge,
 		},
 	}
