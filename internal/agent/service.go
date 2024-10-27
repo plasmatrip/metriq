@@ -13,13 +13,12 @@ import (
 )
 
 type Controller struct {
-	Config Config
 	Repo   storage.Repository
 	Client http.Client
 }
 
-func NewController(config Config, repo storage.Repository) *Controller {
-	return &Controller{Config: config, Repo: repo, Client: http.Client{}}
+func NewController(repo storage.Repository) *Controller {
+	return &Controller{Repo: repo, Client: http.Client{}}
 }
 
 func (c *Controller) SendMetrics(server string) error {
