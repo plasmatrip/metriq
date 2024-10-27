@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 )
 
 const (
@@ -27,12 +26,12 @@ func NewConfig() *Config {
 
 	var srv string
 	flag.StringVar(&srv, "a", "localhost:8080", "Server address host:port")
-	flag.Parse()
-	args := strings.Split(srv, ":")
+	//flag.Parse()
+	//args := strings.Split(srv, ":")
 
-	fmt.Println(srv)
+	//fmt.Println(srv)
 
-	fmt.Println(args)
+	//fmt.Println(args)
 
 	// server := new(types.SrvAddr)
 	// _ = flag.Value(server)
@@ -59,9 +58,9 @@ func NewConfig() *Config {
 	// 	server.Port = port
 	// }
 
-	config.Host = args[0]
-	config.Port = args[1]
-	config.URL = "http://" + config.Host + ":" + config.Port
+	//config.Host = args[0]
+	//config.Port = args[1]
+	config.URL = "http://" + srv //"http://" + config.Host + ":" + config.Port
 
 	return config
 }
