@@ -17,11 +17,11 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType := r.Header.Get(`Content-Type`)
-	if !strings.Contains(`text/plain`, contentType) {
-		http.Error(w, "Only the 'text/plain' content type is allowed!", http.StatusUnsupportedMediaType)
-		return
-	}
+	// contentType := r.Header.Get(`Content-Type`)
+	// if !strings.Contains(`text/plain`, contentType) {
+	// 	http.Error(w, "Only the 'text/plain' content type is allowed!", http.StatusUnsupportedMediaType)
+	// 	return
+	// }
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 

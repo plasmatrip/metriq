@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/plasmatrip/metriq/internal/server"
 )
 
 const (
@@ -63,7 +61,7 @@ func NewConfig() *Config {
 
 	config.Host = args[0]
 	config.Port = args[1]
-	config.URL = "http://" + server.Host + ":" + server.Port
+	config.URL = "http://" + config.Host + ":" + config.Port
 
 	return config
 }
