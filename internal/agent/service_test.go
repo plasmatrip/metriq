@@ -19,7 +19,7 @@ func NewMockStorage() *MockStorage {
 	return &MockStorage{
 		storage.MemStorage{
 			Mu:      sync.Mutex{},
-			Storage: map[string]storage.Metric{"metric": storage.Metric{MetricType: types.Gauge, Value: 100}, "counter": storage.Metric{MetricType: types.Counter, Value: 100}},
+			Storage: map[string]storage.Metric{"metric": {MetricType: types.Gauge, Value: 100}, "counter": {MetricType: types.Counter, Value: 100}},
 		},
 	}
 }

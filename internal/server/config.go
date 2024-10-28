@@ -3,17 +3,18 @@ package server
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/caarlos0/env/v6"
 )
 
 const (
-	Port = "8080"
-	Host = "localhost"
+	port = "8080"
+	host = "localhost"
 
-	URL = "http://" + Host + ":" + Port
-
-	UpdateURILen = 5
-	ValueURILen  = 4
+	UpdateURLLen = 5
+	ValueURLLen  = 4
 
 	RequestTypePos  = 2
 	RequestNamePos  = 3
@@ -26,39 +27,48 @@ const (
 )
 
 type Config struct {
-	Port string
-	Host string
+	Host string `env:"ADDRESS"`
 }
 
 func NewConfig() *Config {
-	var srv string
-	flag.StringVar(&srv, "a", "localhost:8080", "Server address host:port")
+	config := new(Config)
+
+	//читаем переменную окружения, при ошибке выходим из программы
+	err := env.Parse(config)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	//если переменная есть парсим адрес
+	if len(config.Host) != 0 {
+		parseAddress(config)
+		fmt.Println("oops")
+
+		return config
+	}
+
+	//проверяем флаги
+	flag.StringVar(&config.Host, "a", "localhost:8080", "Server address host:port")
 	flag.Parse()
-	args := strings.Split(srv, ":")
 
-	fmt.Println(srv)
+	if len(flag.Args()) > 0 {
+		fmt.Println("Unknown flag(s): ", flag.Args())
+		os.Exit(1)
+	}
 
-	fmt.Println(args)
+	parseAddress(config)
 
-	// server := new(types.SrvAddr)
-	// _ = flag.Value(server)
-	// flag.Var(server, "a", "Server address host:port")
-	// flag.Parse()
+	return config
+}
 
-	// if len(flag.Args()) > 0 {
-	// 	fmt.Println("Unknown flag(s): ", flag.Args())
-	// 	os.Exit(1)
-	// }
-
-	// if len(server.Host) == 0 || len(server.Port) == 0 {
-	// 	server.Host = Host
-	// 	server.Port = Port
-	// }
-
-	// if len(args)
-
-	return &Config{
-		Host: args[0],
-		Port: args[1],
+func parseAddress(config *Config) {
+	args := strings.Split(config.Host, ":")
+	if len(args) == 2 {
+		if len(args[0]) == 0 || len(args[1]) == 0 {
+			config.Host = host + ":" + port
+		}
+	} else {
+		config.Host = host + ":" + port
 	}
 }

@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/caarlos0/env/v6"
 )
 
 const (
@@ -14,28 +17,35 @@ const (
 )
 
 type Config struct {
-	Port           string
-	Host           string
-	URL            string
-	PollInterval   int
-	ReportInterval int
+	Host           string `env:"ADDRESS"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
 }
 
 func NewConfig() *Config {
 	config := new(Config)
 
-	var srv string
-	flag.StringVar(&srv, "a", "localhost:8080", "Server address host:port")
-	//flag.Parse()
-	//args := strings.Split(srv, ":")
+	os.Setenv("ADDRESS", "server:85")
+	os.Setenv("POLL_INTERVAL", "25")
+	os.Setenv("REPORT_INTERVAL", "25")
 
-	//fmt.Println(srv)
+	//читаем переменную окружения, при ошибке выходим из программы
+	err := env.Parse(config)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-	//fmt.Println(args)
+	//если переменная есть парсим адрес
+	if len(config.Host) != 0 {
+		parseAddress(config)
+		fmt.Println("oops")
 
-	// server := new(types.SrvAddr)
-	// _ = flag.Value(server)
-	// flag.Var(server, "a", "Server address host:port")
+		return config
+	}
+
+	//проверяем флаги
+	flag.StringVar(&config.Host, "a", "localhost:8080", "Server address host:port")
 	flag.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
 	flag.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
 	flag.Parse()
@@ -45,6 +55,8 @@ func NewConfig() *Config {
 		os.Exit(1)
 	}
 
+	parseAddress(config)
+
 	if config.PollInterval <= 0 {
 		config.PollInterval = pollInterval
 	}
@@ -53,14 +65,16 @@ func NewConfig() *Config {
 		config.ReportInterval = reportInterval
 	}
 
-	// if len(server.Host) == 0 || len(server.Port) == 0 {
-	// 	server.Host = host
-	// 	server.Port = port
-	// }
-
-	//config.Host = args[0]
-	//config.Port = args[1]
-	config.URL = "http://" + srv //"http://" + config.Host + ":" + config.Port
-
 	return config
+}
+
+func parseAddress(config *Config) {
+	args := strings.Split(config.Host, ":")
+	if len(args) == 2 {
+		if len(args[0]) == 0 || len(args[1]) == 0 {
+			config.Host = host + ":" + port
+		}
+	} else {
+		config.Host = host + ":" + port
+	}
 }

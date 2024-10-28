@@ -25,3 +25,4 @@ vendor/
 .vscode
 metricstest
 golangci-lint/golangci.yml
+golangci-lint/report-unformatted.json

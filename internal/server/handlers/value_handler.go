@@ -17,7 +17,7 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
-	if len(uri) != server.ValueURILen {
+	if len(uri) != server.ValueURLLen {
 		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}

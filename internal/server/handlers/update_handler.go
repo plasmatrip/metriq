@@ -25,7 +25,7 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	uri := strings.Split(r.URL.RequestURI(), "/")
 
-	if len(uri) != server.UpdateURILen {
+	if len(uri) != server.UpdateURLLen {
 		http.Error(w, "Request not recognized!", http.StatusNotFound)
 		return
 	}

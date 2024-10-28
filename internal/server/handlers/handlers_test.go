@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/plasmatrip/metriq/internal/server"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +21,7 @@ func TestUpdateHandlers(t *testing.T) {
 	}{
 		{
 			name: "Status ok test",
-			url:  server.Host + ":" + server.Port + "/update/gauge/metric/100",
+			url:  "localhost:8080/update/gauge/metric/100",
 			want: want{
 				code:        http.StatusOK,
 				contentType: "text/plain",
@@ -30,7 +29,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "No name metrics test",
-			url:  server.Host + ":" + server.Port + "/update/gauge//100",
+			url:  "localhost:8080/update/gauge//100",
 			want: want{
 				code:        http.StatusNotFound,
 				contentType: "text/plain",
@@ -38,7 +37,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong metrics type",
-			url:  server.Host + ":" + server.Port + "/update/gaaauge/metric/100",
+			url:  "localhost:8080/update/gaaauge/metric/100",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
@@ -46,7 +45,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong value",
-			url:  server.Host + ":" + server.Port + "/update/counter/metric/100.5",
+			url:  "localhost:8080/update/counter/metric/100.5",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
@@ -54,7 +53,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong value",
-			url:  server.Host + ":" + server.Port + "/update/counter/metric/aa",
+			url:  "localhost:8080/update/counter/metric/aa",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",

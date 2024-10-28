@@ -27,11 +27,17 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics(config.URL); err != nil {
+			if err := controller.SendMetrics(config.Host); err != nil {
 				fmt.Print(err)
 			}
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
 	}()
+
+	fmt.Printf(`The metrics collection agent is running.
+The interval for collecting metrics is %d seconds, the interval for transmitting metrics to the server is %d seconds.
+Server address: %s
+`, config.PollInterval, config.ReportInterval, config.Host)
+
 	wg.Wait()
 }
