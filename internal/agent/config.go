@@ -25,10 +25,6 @@ type Config struct {
 func NewConfig() *Config {
 	config := new(Config)
 
-	os.Setenv("ADDRESS", "server:85")
-	os.Setenv("POLL_INTERVAL", "25")
-	os.Setenv("REPORT_INTERVAL", "25")
-
 	//читаем переменную окружения, при ошибке выходим из программы
 	err := env.Parse(config)
 	if err != nil {
@@ -39,7 +35,6 @@ func NewConfig() *Config {
 	//если переменная есть парсим адрес
 	if len(config.Host) != 0 {
 		parseAddress(config)
-		fmt.Println("oops")
 
 		return config
 	}
