@@ -27,7 +27,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics(config.Host); err != nil {
+			if err := controller.SendMetrics("http://" + config.Host); err != nil {
 				fmt.Print(err)
 			}
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
