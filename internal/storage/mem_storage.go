@@ -59,7 +59,7 @@ func (ms *MemStorage) updateCounter(key string, metric Metric) error {
 
 func (ms *MemStorage) Get(key string) (Metric, bool) {
 	ms.Mu.RLock()
-	defer ms.Mu.Unlock()
+	defer ms.Mu.RUnlock()
 	if metric, ok := ms.Storage[key]; ok {
 		return metric, true
 	}
@@ -67,8 +67,8 @@ func (ms *MemStorage) Get(key string) (Metric, bool) {
 }
 
 func (ms *MemStorage) GetAll() map[string]Metric {
-	ms.Mu.Lock()
-	defer ms.Mu.Unlock()
+	ms.Mu.RLock()
+	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))
 	maps.Copy(copyStorage, ms.Storage)
 	return copyStorage //ms.Storage
