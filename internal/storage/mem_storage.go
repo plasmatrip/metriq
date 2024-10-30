@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"maps"
 	"sync"
 
 	"github.com/plasmatrip/metriq/internal/types"
@@ -12,15 +13,17 @@ type Metric struct {
 	Value      any
 }
 
+type storage map[string]Metric
+
 type MemStorage struct {
-	Mu      sync.Mutex
-	Storage map[string]Metric
+	Mu      sync.RWMutex
+	Storage storage //map[string]Metric
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
-		Mu:      sync.Mutex{},
-		Storage: map[string]Metric{},
+		Mu:      sync.RWMutex{},
+		Storage: make(storage), //map[string]Metric{},
 	}
 }
 
@@ -55,6 +58,8 @@ func (ms *MemStorage) updateCounter(key string, metric Metric) error {
 }
 
 func (ms *MemStorage) Get(key string) (Metric, bool) {
+	ms.Mu.RLock()
+	defer ms.Mu.Unlock()
 	if metric, ok := ms.Storage[key]; ok {
 		return metric, true
 	}
@@ -62,5 +67,9 @@ func (ms *MemStorage) Get(key string) (Metric, bool) {
 }
 
 func (ms *MemStorage) GetAll() map[string]Metric {
-	return ms.Storage
+	ms.Mu.Lock()
+	defer ms.Mu.Unlock()
+	copyStorage := make(storage, len(ms.Storage))
+	maps.Copy(copyStorage, ms.Storage)
+	return copyStorage //ms.Storage
 }

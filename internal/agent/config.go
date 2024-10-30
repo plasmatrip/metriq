@@ -1,9 +1,9 @@
 package agent
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/caarlos0/env/v6"
@@ -22,21 +22,22 @@ type Config struct {
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 }
 
-func NewConfig() *Config {
+func NewConfig() (*Config, error) {
 	config := new(Config)
 
 	//читаем переменную окружения, при ошибке выходим из программы
 	err := env.Parse(config)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		// fmt.Println(err)
+		// os.Exit(1)
+		return nil, err
 	}
 
 	//если переменная есть парсим адрес
 	if len(config.Host) != 0 {
 		parseAddress(config)
 
-		return config
+		return config, nil
 	}
 
 	//проверяем флаги
@@ -46,8 +47,9 @@ func NewConfig() *Config {
 	flag.Parse()
 
 	if len(flag.Args()) > 0 {
-		fmt.Println("Unknown flag(s): ", flag.Args())
-		os.Exit(1)
+		// fmt.Println("Unknown flag(s): ", flag.Args())
+		// os.Exit(1)
+		return nil, errors.New(fmt.Sprintln("Unknown flag(s): ", flag.Args()))
 	}
 
 	parseAddress(config)
@@ -60,7 +62,7 @@ func NewConfig() *Config {
 		config.ReportInterval = reportInterval
 	}
 
-	return config
+	return config, nil
 }
 
 func parseAddress(config *Config) {

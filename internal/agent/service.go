@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/types"
@@ -18,7 +19,7 @@ type Controller struct {
 }
 
 func NewController(repo storage.Repository) *Controller {
-	return &Controller{Repo: repo, Client: http.Client{}}
+	return &Controller{Repo: repo, Client: http.Client{Timeout: time.Second * 5}}
 }
 
 func (c *Controller) SendMetrics(server string) error {
@@ -40,7 +41,7 @@ func (c *Controller) SendMetrics(server string) error {
 func (c *Controller) send(url string) error {
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		//fmt.Println("Error: ", err)
 		return err
 	}
 
@@ -48,14 +49,14 @@ func (c *Controller) send(url string) error {
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		//fmt.Println("Error: ", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	_, err = io.Copy(os.Stdout, resp.Body)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		//fmt.Println("Error: ", err)
 		return err
 	}
 	return nil
