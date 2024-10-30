@@ -41,7 +41,6 @@ func (c *Controller) SendMetrics(server string) error {
 func (c *Controller) send(url string) error {
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		//fmt.Println("Error: ", err)
 		return err
 	}
 
@@ -49,14 +48,12 @@ func (c *Controller) send(url string) error {
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		//fmt.Println("Error: ", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	_, err = io.Copy(os.Stdout, resp.Body)
 	if err != nil {
-		//fmt.Println("Error: ", err)
 		return err
 	}
 	return nil

@@ -17,13 +17,13 @@ type storage map[string]Metric
 
 type MemStorage struct {
 	Mu      sync.RWMutex
-	Storage storage //map[string]Metric
+	Storage storage
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
 		Mu:      sync.RWMutex{},
-		Storage: make(storage), //map[string]Metric{},
+		Storage: make(storage),
 	}
 }
 
@@ -71,5 +71,5 @@ func (ms *MemStorage) GetAll() map[string]Metric {
 	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))
 	maps.Copy(copyStorage, ms.Storage)
-	return copyStorage //ms.Storage
+	return copyStorage
 }

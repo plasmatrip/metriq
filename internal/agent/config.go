@@ -28,8 +28,6 @@ func NewConfig() (*Config, error) {
 	//читаем переменную окружения, при ошибке выходим из программы
 	err := env.Parse(config)
 	if err != nil {
-		// fmt.Println(err)
-		// os.Exit(1)
 		return nil, err
 	}
 
@@ -47,8 +45,6 @@ func NewConfig() (*Config, error) {
 	flag.Parse()
 
 	if len(flag.Args()) > 0 {
-		// fmt.Println("Unknown flag(s): ", flag.Args())
-		// os.Exit(1)
 		return nil, errors.New(fmt.Sprintln("Unknown flag(s): ", flag.Args()))
 	}
 
