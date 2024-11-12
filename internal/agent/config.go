@@ -25,20 +25,20 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	config := new(Config)
 
-	//читаем переменную окружения, при ошибке выходим из программы
+	// читаем переменную окружения, при ошибке выходим из программы
 	err := env.Parse(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
-	//если переменная есть парсим адрес
+	// если переменная есть парсим адрес
 	if len(config.Host) != 0 {
 		parseAddress(config)
 
 		return config, nil
 	}
 
-	//проверяем флаги
+	// проверяем флаги
 	flag.StringVar(&config.Host, "a", "localhost:8080", "Server address host:port")
 	flag.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
 	flag.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")

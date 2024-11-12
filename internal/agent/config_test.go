@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"flag"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,11 +62,9 @@ func TestConfig_NewConfig(t *testing.T) {
 			want: Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10},
 		},
 	}
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fs.String("a", "localhost:8080", "Server address host:port")
-			fs.Parse(test.args)
+			os.Args = append([]string{os.Args[0]}, test.args...)
 			config, err := NewConfig()
 			require.NoError(t, err)
 			assert.Equal(t, test.want, *config)
