@@ -27,3 +27,4 @@ metricstest
 golangci-lint
 bin/agent
 bin/server
+cover.html

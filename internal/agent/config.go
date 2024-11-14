@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/caarlos0/env/v6"
@@ -25,30 +26,34 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	config := new(Config)
 
-	// читаем переменную окружения, при ошибке выходим из программы
-	err := env.Parse(config)
-	if err != nil {
+	// читаем переменную окружения, при ошибке прокидываем ее наверх
+	if err := env.Parse(config); err != nil {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
-	// если переменная есть парсим адрес
+	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
 	if len(config.Host) != 0 {
-		parseAddress(config)
+		if err := parseAddress(config); err != nil {
+			return nil, fmt.Errorf("port parsing error: %w", err)
+		}
 
 		return config, nil
 	}
 
 	// проверяем флаги
-	flag.StringVar(&config.Host, "a", "localhost:8080", "Server address host:port")
-	flag.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
-	flag.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
-	flag.Parse()
+	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	cl.StringVar(&config.Host, "a", host+":"+port, "Server address host:port")
+	cl.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
+	cl.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
 
-	if len(flag.Args()) > 0 {
-		return nil, errors.New(fmt.Sprintln("Unknown flag(s): ", flag.Args()))
+	// ошибке парсинга прокидываем ошибку наверх
+	if err := cl.Parse(os.Args[1:]); err != nil {
+		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	parseAddress(config)
+	if err := parseAddress(config); err != nil {
+		return nil, fmt.Errorf("port parsing error: %w", err)
+	}
 
 	if config.PollInterval <= 0 {
 		config.PollInterval = pollInterval
@@ -61,13 +66,17 @@ func NewConfig() (*Config, error) {
 	return config, nil
 }
 
-func parseAddress(config *Config) {
+func parseAddress(config *Config) error {
 	args := strings.Split(config.Host, ":")
 	if len(args) == 2 {
 		if len(args[0]) == 0 || len(args[1]) == 0 {
 			config.Host = host + ":" + port
+			return nil
 		}
-	} else {
-		config.Host = host + ":" + port
+
+		_, err := strconv.ParseInt(args[1], 10, 64)
+		return err
 	}
+	config.Host = host + ":" + port
+	return nil
 }

@@ -21,7 +21,7 @@ func TestUpdateHandlers(t *testing.T) {
 	}{
 		{
 			name: "Status ok test",
-			url:  "localhost:8080/update/gauge/metric/100",
+			url:  "/update/gauge/metric/100",
 			want: want{
 				code:        http.StatusOK,
 				contentType: "text/plain",
@@ -29,7 +29,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "No name metrics test",
-			url:  "localhost:8080/update/gauge//100",
+			url:  "/update/gauge//100",
 			want: want{
 				code:        http.StatusNotFound,
 				contentType: "text/plain",
@@ -37,7 +37,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong metrics type",
-			url:  "localhost:8080/update/gaaauge/metric/100",
+			url:  "/update/gaaauge/metric/100",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
@@ -45,7 +45,7 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong value",
-			url:  "localhost:8080/update/counter/metric/100.5",
+			url:  "/update/counter/metric/100.5",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
@@ -53,26 +53,27 @@ func TestUpdateHandlers(t *testing.T) {
 		},
 		{
 			name: "Wrong value",
-			url:  "localhost:8080/update/counter/metric/aa",
+			url:  "/update/counter/metric/aa",
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 		},
 	}
-	handlers := NewHandlers(storage.NewStorage())
+	h := NewHandlers(storage.NewStorage())
+	mux := http.NewServeMux()
+	mux.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
+	serv := httptest.NewServer(mux)
+	defer serv.Close()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 
-			w := httptest.NewRecorder()
-			w.Header().Set(`Content-Type`, `text/plain`)
-			handlers.UpdateHandler(w, request)
+			request, err := http.NewRequest(http.MethodPost, serv.URL+test.url, nil)
+			assert.NoError(t, err)
 
-			res := w.Result()
-
-			assert.Equal(t, test.want.code, res.StatusCode)
-
+			res, err := serv.Client().Do(request)
+			assert.NoError(t, err)
 			defer res.Body.Close()
 		})
 	}

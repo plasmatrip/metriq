@@ -14,7 +14,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	controller := agent.NewController(storage.NewStorage())
+	controller := agent.NewController(storage.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -30,7 +30,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics("http://" + config.Host); err != nil {
+			if err := controller.SendMetrics(); err != nil {
 				fmt.Println("Error: ", err)
 			}
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)

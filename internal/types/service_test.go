@@ -1,37 +1,40 @@
-package server
+package types
 
 import (
 	"testing"
 
-	"github.com/plasmatrip/metriq/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService_CheckType(t *testing.T) {
 	t.Run("Gauge type test", func(t *testing.T) {
-		assert.True(t, CheckType(types.Gauge))
+		assert.True(t, checkType(Gauge))
 	})
 
 	t.Run("Counter type test", func(t *testing.T) {
-		assert.True(t, CheckType(types.Counter))
+		assert.True(t, checkType(Counter))
 	})
 
 	t.Run("Wrong type test", func(t *testing.T) {
-		assert.False(t, CheckType("wrong type"))
+		assert.False(t, checkType("wrong type"))
 	})
 }
 
 func TestService_CheckValue(t *testing.T) {
 	t.Run("Float64 value", func(t *testing.T) {
-		assert.NoError(t, CheckValue(types.Gauge, "100"))
+		_, err := CheckValue(Gauge, "100")
+		assert.NoError(t, err)
 	})
 	t.Run("Int64 value", func(t *testing.T) {
-		assert.NoError(t, CheckValue(types.Counter, "100"))
+		_, err := CheckValue(Counter, "100")
+		assert.NoError(t, err)
 	})
 	t.Run("Wrong value", func(t *testing.T) {
-		assert.Error(t, CheckValue(types.Counter, "100.5"))
+		_, err := CheckValue(Counter, "100.5")
+		assert.Error(t, err)
 	})
 	t.Run("Wrong value", func(t *testing.T) {
-		assert.Error(t, CheckValue(types.Gauge, "aa"))
+		_, err := CheckValue(Gauge, "aa")
+		assert.Error(t, err)
 	})
 }

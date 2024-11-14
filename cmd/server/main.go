@@ -11,9 +11,10 @@ import (
 )
 
 func main() {
-	config := server.NewConfig()
-
-	r := chi.NewRouter()
+	config, err := server.NewConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	l, err := logger.NewLogger()
 	if err != nil {
@@ -23,8 +24,14 @@ func main() {
 
 	h := handlers.NewHandlers(storage.NewStorage())
 
-	r.Post("/update/*", l.WithLogging(h.UpdateHandler))
-	r.Get("/value/*", l.WithLogging(h.ValueHandler))
+	r := chi.NewRouter()
+
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", l.WithLogging(h.UpdateHandler))
+	r.Post("/update/", l.WithLogging(h.JSONUpdateHandler))
+	r.Post("/update", l.WithLogging(h.JSONUpdateHandler))
+	r.Post("/value/", l.WithLogging(h.JSONValueHandler))
+	r.Post("/value", l.WithLogging(h.JSONValueHandler))
+	r.Get("/value/{metricType}/{metricName}", l.WithLogging(h.ValueHandler))
 	r.Get("/", l.WithLogging(h.MetricsHandler))
 
 	err = http.ListenAndServe(config.Host, func(next http.Handler) http.Handler {
