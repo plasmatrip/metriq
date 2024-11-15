@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/plasmatrip/metriq/internal/model"
+	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
 func (h *Handlers) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	var jMetric model.Metrics
+	var jMetric models.Metrics
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)

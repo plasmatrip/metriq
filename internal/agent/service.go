@@ -3,10 +3,8 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"math/rand/v2"
 	"net/http"
-	"os"
 	"runtime"
 	"time"
 
@@ -26,26 +24,21 @@ func NewController(repo storage.Repository, config Config) *Controller {
 
 func (c Controller) SendMetrics() error {
 	for mName, metric := range c.Repo.GetAll() {
-		// var path string
-		// switch metric.MetricType {
-		// case types.Gauge:
-		// 	path = "/update/gauge/"
-		// case types.Counter:
-		// 	path = "/update/counter/"
-		// }
-		if err := c.jsonSend(mName, metric); err != nil {
+		if err := c.send(mName, metric); err != nil {
 			return err
 		}
-		// if err := c.send(fmt.Sprint(server, path, mName, "/", metric.Value)); err != nil {
-		// 	return err
-		// }
 	}
 	return nil
 }
 
-func (c Controller) jsonSend(mName string, metric types.Metric) error {
+func (c Controller) send(mName string, metric types.Metric) error {
 	jMetric := metric.Convert(mName)
 	data, err := json.Marshal(jMetric)
+	if err != nil {
+		return err
+	}
+
+	data, err = Compress(data)
 	if err != nil {
 		return err
 	}
@@ -56,6 +49,7 @@ func (c Controller) jsonSend(mName string, metric types.Metric) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "application/gzip")
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
@@ -63,32 +57,6 @@ func (c Controller) jsonSend(mName string, metric types.Metric) error {
 	}
 	defer resp.Body.Close()
 
-	// _, err = io.Copy(os.Stdout, resp.Body)
-	// if err != nil {
-	// 	return err
-	// }
-
-	return nil
-}
-
-func (c Controller) send(url string) error {
-	req, err := http.NewRequest(http.MethodPost, url, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "text/plain")
-
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	_, err = io.Copy(os.Stdout, resp.Body)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

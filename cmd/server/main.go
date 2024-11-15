@@ -22,17 +22,22 @@ func main() {
 	}
 	defer l.Close()
 
-	h := handlers.NewHandlers(storage.NewStorage())
+	h := handlers.NewHandlers(storage.NewStorage(), *config)
 
 	r := chi.NewRouter()
 
-	r.Post("/update/{metricType}/{metricName}/{metricValue}", l.WithLogging(h.UpdateHandler))
-	r.Post("/update/", l.WithLogging(h.JSONUpdateHandler))
-	r.Post("/update", l.WithLogging(h.JSONUpdateHandler))
-	r.Post("/value/", l.WithLogging(h.JSONValueHandler))
-	r.Post("/value", l.WithLogging(h.JSONValueHandler))
-	r.Get("/value/{metricType}/{metricName}", l.WithLogging(h.ValueHandler))
-	r.Get("/", l.WithLogging(h.MetricsHandler))
+	r.Use(server.WithCompressed)
+	r.Use(l.WithLogging)
+
+	r.Route("/update", func(r chi.Router) {
+		r.Post("/", h.JSONUpdateHandler)
+	})
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
+	r.Route("/value", func(r chi.Router) {
+		r.Post("/", h.JSONValueHandler)
+	})
+	r.Get("/value/{metricType}/{metricName}", h.ValueHandler)
+	r.Get("/", h.MetricsHandler)
 
 	err = http.ListenAndServe(config.Host, func(next http.Handler) http.Handler {
 		l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", config.Host)

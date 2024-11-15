@@ -13,18 +13,6 @@ import (
 const (
 	port = "8080"
 	host = "localhost"
-
-	UpdateURLLen = 5
-	ValueURLLen  = 4
-
-	RequestTypePos  = 2
-	RequestNamePos  = 3
-	RequestValuePos = 4
-
-	Gauge   = "gauge"
-	Counter = "counter"
-
-	PollCount = "PollCount"
 )
 
 type Config struct {

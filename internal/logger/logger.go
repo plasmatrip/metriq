@@ -44,7 +44,7 @@ func (l *logger) Close() {
 	l.zap.Sync()
 }
 
-func (l *logger) WithLogging(next http.HandlerFunc) http.HandlerFunc {
+func (l *logger) WithLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

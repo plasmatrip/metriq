@@ -51,7 +51,7 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		formatedValue = strconv.FormatInt(int64(value), 10)
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(formatedValue))
 	if err != nil {

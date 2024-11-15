@@ -3,7 +3,7 @@ package types
 import (
 	"errors"
 
-	"github.com/plasmatrip/metriq/internal/model"
+	"github.com/plasmatrip/metriq/internal/models"
 )
 
 const (
@@ -38,17 +38,17 @@ func (metric Metric) Check() error {
 	return nil
 }
 
-func (metric Metric) Convert(key string) model.Metrics {
+func (metric Metric) Convert(key string) models.Metrics {
 	if metric.MetricType == Gauge {
 		value, _ := metric.Value.(float64)
-		return model.Metrics{
+		return models.Metrics{
 			ID:    key,
 			MType: metric.MetricType,
 			Value: &value,
 		}
 	}
 	value, _ := metric.Value.(int64)
-	return model.Metrics{
+	return models.Metrics{
 		ID:    key,
 		MType: metric.MetricType,
 		Delta: &value,

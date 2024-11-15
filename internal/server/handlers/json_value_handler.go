@@ -1,37 +1,25 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 
-	"github.com/plasmatrip/metriq/internal/model"
+	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
 func (h *Handlers) JSONValueHandler(w http.ResponseWriter, r *http.Request) {
-	var jMetric model.Metrics
+	var jMetric models.Metrics
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var buf bytes.Buffer
-	_, err := buf.ReadFrom(r.Body)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&jMetric); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	if err := json.Unmarshal(buf.Bytes(), &jMetric); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	// if err := json.NewDecoder(r.Body).Decode(&jMetric); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
 
 	//проверяем тип метрики
 	if err := types.CheckMetricType(jMetric.MType); err != nil {
