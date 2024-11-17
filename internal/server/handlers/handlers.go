@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"github.com/plasmatrip/metriq/internal/server"
+	"github.com/plasmatrip/metriq/internal/server/config"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 type Handlers struct {
 	Repo   storage.Repository
-	config server.Config
+	config config.Config
 }
 
-func NewHandlers(repo storage.Repository, config server.Config) *Handlers {
+func NewHandlers(repo storage.Repository, config config.Config) *Handlers {
 	return &Handlers{Repo: repo, config: config}
 }

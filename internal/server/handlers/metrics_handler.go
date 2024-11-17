@@ -7,11 +7,17 @@ import (
 
 func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+		http.Error(w, "only GET requests are allowed!", http.StatusMethodNotAllowed)
 		return
 	}
 
-	metrics := h.Repo.GetAll()
+	metrics := h.Repo.Metrics()
+
+	// var metricsStr []byte
+
+	// for k, v := range metrics {
+	// 	metricsStr = fmt.Appendln([]byte(metricsStr), fmt.Sprintln(k, "=", v.Value))
+	// }
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>

@@ -41,12 +41,12 @@ func (h *Handlers) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		value = *jMetric.Value
 	}
 
-	if err := h.Repo.Update(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+	if err := h.Repo.SetMetric(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	metric, ok := h.Repo.Get(jMetric.ID)
+	metric, ok := h.Repo.Metric(jMetric.ID)
 	if !ok {
 		http.Error(w, "Metric not found", http.StatusNotFound)
 		return

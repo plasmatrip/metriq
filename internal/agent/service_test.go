@@ -26,8 +26,8 @@ func NewMockStorage() *MockStorage {
 
 func TestService_SendMetrics(t *testing.T) {
 	mock := NewMockStorage()
-	mock.Update("metric", types.Metric{MetricType: types.Gauge, Value: 100})
-	mock.Update("counter", types.Metric{MetricType: types.Counter, Value: 100})
+	mock.SetMetric("metric", types.Metric{MetricType: types.Gauge, Value: 100})
+	mock.SetMetric("counter", types.Metric{MetricType: types.Counter, Value: 100})
 
 	controller := NewController(&MockStorage{}, Config{})
 

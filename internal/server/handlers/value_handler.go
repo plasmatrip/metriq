@@ -9,14 +9,14 @@ import (
 
 func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+		http.Error(w, "only GET requests are allowed!", http.StatusMethodNotAllowed)
 		return
 	}
 
 	//получаем имя метрики
 	mName := r.PathValue("metricName")
 	if len(mName) == 0 {
-		http.Error(w, "Metric name is undefined", http.StatusBadRequest)
+		http.Error(w, "metric name is undefined", http.StatusBadRequest)
 		return
 	}
 
@@ -27,9 +27,9 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, ok := h.Repo.Get(mName)
+	metric, ok := h.Repo.Metric(mName)
 	if !ok {
-		http.Error(w, "Metric not found", http.StatusNotFound)
+		http.Error(w, "metric not found", http.StatusNotFound)
 		return
 	}
 
@@ -38,14 +38,14 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 	case types.Gauge:
 		value, ok := metric.Value.(float64)
 		if !ok {
-			http.Error(w, "Failed to cast the received value to type float64", http.StatusInternalServerError)
+			http.Error(w, "failed to cast the received value to type float64", http.StatusInternalServerError)
 			return
 		}
 		formatedValue = strconv.FormatFloat(float64(value), 'f', -1, 64)
 	case types.Counter:
 		value, ok := metric.Value.(int64)
 		if !ok {
-			http.Error(w, "Failed to cast the received value to type int64", http.StatusInternalServerError)
+			http.Error(w, "failed to cast the received value to type int64", http.StatusInternalServerError)
 			return
 		}
 		formatedValue = strconv.FormatInt(int64(value), 10)

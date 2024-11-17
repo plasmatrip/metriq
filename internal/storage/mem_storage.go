@@ -13,33 +13,47 @@ type storage map[string]types.Metric
 type MemStorage struct {
 	Mu      sync.RWMutex
 	Storage storage
+	bkp     backup
+}
+
+type backup struct {
+	do bool
+	c  chan bool
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
 		Mu:      sync.RWMutex{},
 		Storage: make(storage),
+		bkp:     backup{do: false, c: nil},
 	}
 }
 
-func (ms *MemStorage) Update(mName string, metric types.Metric) error {
+func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	ms.Mu.Lock()
 	defer ms.Mu.Unlock()
+
 	var err error
+
 	switch metric.MetricType {
 	case types.Gauge:
 		if err := metric.Check(); err != nil {
 			return err
 		}
 		ms.Storage[mName] = metric
-		err = ms.updateCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
+		err = ms.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
 	case types.Counter:
-		err = ms.updateCounter(mName, metric)
+		err = ms.setCounter(mName, metric)
 	}
+
+	if ms.bkp.do {
+		ms.bkp.c <- true
+	}
+
 	return err
 }
 
-func (ms *MemStorage) updateCounter(mName string, metric types.Metric) error {
+func (ms *MemStorage) setCounter(mName string, metric types.Metric) error {
 	if oldMetric, ok := ms.Storage[mName]; ok {
 		oldValue, ok := oldMetric.Value.(int64)
 		if !ok {
@@ -56,14 +70,19 @@ func (ms *MemStorage) updateCounter(mName string, metric types.Metric) error {
 	return nil
 }
 
-func (ms *MemStorage) Get(key string) (types.Metric, bool) {
+func (ms *MemStorage) Backup(c chan bool) {
+	ms.bkp.do = true
+	ms.bkp.c = c
+}
+
+func (ms *MemStorage) Metric(key string) (types.Metric, bool) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	metric, ok := ms.Storage[key]
 	return metric, ok
 }
 
-func (ms *MemStorage) GetAll() map[string]types.Metric {
+func (ms *MemStorage) Metrics() map[string]types.Metric {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))

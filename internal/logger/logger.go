@@ -18,7 +18,7 @@ type (
 		responseData *responseData
 	}
 
-	logger struct {
+	Logger struct {
 		zap   *zap.Logger
 		Sugar *zap.SugaredLogger
 	}
@@ -35,16 +35,16 @@ func (r *loggingResponseWriter) WriteHeader(status int) {
 	r.responseData.status = status
 }
 
-func NewLogger() (*logger, error) {
+func NewLogger() (*Logger, error) {
 	zap, err := zap.NewDevelopment()
-	return &logger{zap: zap, Sugar: zap.Sugar()}, err
+	return &Logger{zap: zap, Sugar: zap.Sugar()}, err
 }
 
-func (l *logger) Close() {
+func (l *Logger) Close() {
 	l.zap.Sync()
 }
 
-func (l *logger) WithLogging(next http.Handler) http.Handler {
+func (l *Logger) WithLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

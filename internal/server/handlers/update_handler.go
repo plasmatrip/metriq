@@ -9,7 +9,7 @@ import (
 
 func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST requests are allowed!", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -36,13 +36,13 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Repo.Update(mName, types.Metric{MetricType: mType, Value: value}); err != nil {
+	if err := h.Repo.SetMetric(mName, types.Metric{MetricType: mType, Value: value}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(fmt.Sprint("Successful data update: ", mType, " ", mName, " ", metricValue, "\r\n")))
+	_, err = w.Write([]byte(fmt.Sprint("successful data update: ", mType, " ", mName, " ", metricValue, "\r\n")))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
