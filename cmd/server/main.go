@@ -33,7 +33,7 @@ func main() {
 
 	backup, err := backup.NewBackup(*c, s, l)
 	if err != nil {
-		l.Sugar.Panic("Error initializing backup: ", err, " ", c.FileStoragePath)
+		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
 	}
 	backup.Start()
 
@@ -57,7 +57,11 @@ func main() {
 	// 	panic(err)
 	// }
 
-	backup.Save()
+	l.Sugar.Infow("save metrics on exit")
+	err = backup.Save()
+	if err != nil {
+		l.Sugar.Infow("error saving to backup: ", err, " ", c.FileStoragePath)
+	}
 
 	os.Exit(0)
 }

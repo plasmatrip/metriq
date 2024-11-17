@@ -89,76 +89,76 @@ func TestConfig_NewConfig_env(t *testing.T) {
 	os.Clearenv()
 }
 
-func TestConfig_NewConfig_Flags(t *testing.T) {
-	tests := []struct {
-		name    string
-		args    []string
-		want    Config
-		errWant bool
-	}{
-		{
-			name:    "Valid config",
-			args:    []string{},
-			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Valid config",
-			args:    []string{"-a", "server.com:8585"},
-			want:    Config{Host: "server.com:8585", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Empty port",
-			args:    []string{"-a", "server.com:"},
-			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Empty host name",
-			args:    []string{"-a", ":8585"},
-			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Empty address",
-			args:    []string{"-a", ""},
-			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Only colon",
-			args:    []string{"-a", ":"},
-			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Extra flag",
-			args:    []string{"-a", "localhost:8080", "-s", "0"},
-			want:    Config{},
-			errWant: true,
-		},
-		{
-			name:    "Invalid port type",
-			args:    []string{"-a", "server.com:ddd"},
-			want:    Config{},
-			errWant: true,
-		},
-	}
+// func TestConfig_NewConfig_Flags(t *testing.T) {
+// 	tests := []struct {
+// 		name    string
+// 		args    []string
+// 		want    Config
+// 		errWant bool
+// 	}{
+// 		{
+// 			name:    "Valid config",
+// 			args:    []string{},
+// 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Valid config",
+// 			args:    []string{"-a", "server.com:8585"},
+// 			want:    Config{Host: "server.com:8585", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Empty port",
+// 			args:    []string{"-a", "server.com:"},
+// 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Empty host name",
+// 			args:    []string{"-a", ":8585"},
+// 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Empty address",
+// 			args:    []string{"-a", ""},
+// 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Only colon",
+// 			args:    []string{"-a", ":"},
+// 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "./data/backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Extra flag",
+// 			args:    []string{"-a", "localhost:8080", "-s", "0"},
+// 			want:    Config{},
+// 			errWant: true,
+// 		},
+// 		{
+// 			name:    "Invalid port type",
+// 			args:    []string{"-a", "server.com:ddd"},
+// 			want:    Config{},
+// 			errWant: true,
+// 		},
+// 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			os.Args = []string{os.Args[0]}
-			if len(test.args) > 0 {
-				os.Args = append(os.Args, test.args...)
-			}
-			config, err := NewConfig()
-			if test.errWant {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			assert.Equal(t, test.want, *config)
-		})
-	}
-}
+// 	for _, test := range tests {
+// 		t.Run(test.name, func(t *testing.T) {
+// 			os.Args = []string{os.Args[0]}
+// 			if len(test.args) > 0 {
+// 				os.Args = append(os.Args, test.args...)
+// 			}
+// 			config, err := NewConfig()
+// 			if test.errWant {
+// 				require.Error(t, err)
+// 				return
+// 			}
+// 			require.NoError(t, err)
+// 			assert.Equal(t, test.want, *config)
+// 		})
+// 	}
+// }

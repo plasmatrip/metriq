@@ -14,7 +14,7 @@ const (
 	port            = "8080"
 	host            = "localhost"
 	storeinterval   = 300
-	fileStoragePath = "./data/backup.dat"
+	fileStoragePath = "backup.dat"
 	restore         = true
 )
 
