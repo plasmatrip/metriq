@@ -13,7 +13,7 @@ type storage map[string]types.Metric
 type MemStorage struct {
 	Mu      sync.RWMutex
 	Storage storage
-	bkp     *backup
+	bkp     backup
 }
 
 type backup struct {
@@ -25,7 +25,7 @@ func NewStorage() *MemStorage {
 	return &MemStorage{
 		Mu:      sync.RWMutex{},
 		Storage: make(storage),
-		bkp:     &backup{do: false, c: nil},
+		bkp:     backup{do: false, c: nil},
 	}
 }
 

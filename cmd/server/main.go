@@ -41,7 +41,7 @@ func main() {
 		Handler: func(next http.Handler) http.Handler {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
 			return next
-		}(routing.NewRouter(s, l, *c)),
+		}(routing.NewRouter(s, *c, l)),
 	}
 
 	go server.ListenAndServe()

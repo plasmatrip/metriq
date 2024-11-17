@@ -9,7 +9,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
-func NewRouter(s storage.Repository, l *logger.Logger, c config.Config) *chi.Mux {
+func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux {
 	h := handlers.NewHandlers(s, c)
 
 	r := chi.NewRouter()
