@@ -27,7 +27,7 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, ok := h.Repo.Get(mName)
+	metric, ok := h.Repo.Metric(mName)
 	if !ok {
 		http.Error(w, "Metric not found", http.StatusNotFound)
 		return

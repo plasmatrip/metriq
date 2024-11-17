@@ -1,17 +1,23 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
-	"github.com/plasmatrip/metriq/internal/server"
-	"github.com/plasmatrip/metriq/internal/server/handlers"
+	"github.com/plasmatrip/metriq/internal/server/config"
+	"github.com/plasmatrip/metriq/internal/server/routing"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func main() {
-	config, err := server.NewConfig()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	c, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -22,28 +28,35 @@ func main() {
 	}
 	defer l.Close()
 
-	h := handlers.NewHandlers(storage.NewStorage(), *config)
+	s := storage.NewStorage()
 
-	r := chi.NewRouter()
-
-	r.Use(server.WithCompressed)
-	r.Use(l.WithLogging)
-
-	r.Route("/update", func(r chi.Router) {
-		r.Post("/", h.JSONUpdateHandler)
-	})
-	r.Post("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
-	r.Route("/value", func(r chi.Router) {
-		r.Post("/", h.JSONValueHandler)
-	})
-	r.Get("/value/{metricType}/{metricName}", h.ValueHandler)
-	r.Get("/", h.MetricsHandler)
-
-	err = http.ListenAndServe(config.Host, func(next http.Handler) http.Handler {
-		l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", config.Host)
-		return next
-	}(r))
+	backup, err := backup.NewBackup(*c, s, l)
 	if err != nil {
-		panic(err)
+		l.Sugar.Panic("Error initializing backup: ", err, " ", c.FileStoragePath)
 	}
+	backup.Start()
+
+	server := http.Server{
+		Addr: c.Host,
+		Handler: func(next http.Handler) http.Handler {
+			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
+			return next
+		}(routing.NewRouter(s, l, *c)),
+	}
+
+	go server.ListenAndServe()
+
+	<-ctx.Done()
+
+	// err = http.ListenAndServe(c.Host, func(next http.Handler) http.Handler {
+	// 	l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
+	// 	return next
+	// }(routing.NewRouter(s, l, *c)))
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	backup.Save()
+
+	os.Exit(0)
 }

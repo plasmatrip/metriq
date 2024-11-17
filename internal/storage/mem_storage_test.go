@@ -54,9 +54,9 @@ func TestMemStorage_Update(t *testing.T) {
 			var err error
 			switch test.metricType {
 			case types.Counter:
-				err = storage.Update(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
+				err = storage.SetMetric(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
 			case types.Gauge:
-				err = storage.Update(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
+				err = storage.SetMetric(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
 			}
 			if test.errWant {
 				assert.Error(t, err)
@@ -118,11 +118,11 @@ func TestMemStorage_Get(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			switch test.metricType {
 			case types.Counter:
-				_ = storage.Update(test.key, test.metric)
+				_ = storage.SetMetric(test.key, test.metric)
 			case types.Gauge:
-				_ = storage.Update(test.key, test.metric)
+				_ = storage.SetMetric(test.key, test.metric)
 			}
-			_, ok := storage.Get(test.getKey)
+			_, ok := storage.Metric(test.getKey)
 			if test.errWant {
 				assert.False(t, ok)
 				return

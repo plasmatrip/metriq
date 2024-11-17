@@ -36,7 +36,7 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Repo.Update(mName, types.Metric{MetricType: mType, Value: value}); err != nil {
+	if err := h.Repo.SetMetric(mName, types.Metric{MetricType: mType, Value: value}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
