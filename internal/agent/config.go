@@ -37,6 +37,14 @@ func NewConfig() (*Config, error) {
 			return nil, fmt.Errorf("port parsing error: %w", err)
 		}
 
+		if config.PollInterval <= 0 {
+			config.PollInterval = pollInterval
+		}
+
+		if config.ReportInterval <= 0 {
+			config.ReportInterval = reportInterval
+		}
+
 		return config, nil
 	}
 
@@ -46,7 +54,7 @@ func NewConfig() (*Config, error) {
 	cl.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
 	cl.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
 
-	// ошибке парсинга прокидываем ошибку наверх
+	// при ошибке парсинга прокидываем ошибку наверх
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
