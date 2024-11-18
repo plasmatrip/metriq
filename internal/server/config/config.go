@@ -55,6 +55,10 @@ func NewConfig() (*Config, error) {
 		cl.BoolVar(&cfg.Restore, "r", restore, "Whether to load saved metrics from a file or not")
 	}
 
+	if err := cl.Parse(os.Args[1:]); err != nil {
+		return nil, fmt.Errorf("failed to parse flags: %w", err)
+	}
+
 	return cfg, nil
 }
 

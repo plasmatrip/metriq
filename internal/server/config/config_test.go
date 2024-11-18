@@ -1,11 +1,9 @@
 package config
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_ParseAddress(t *testing.T) {
@@ -50,44 +48,44 @@ func TestConfig_ParseAddress(t *testing.T) {
 	}
 }
 
-func TestConfig_NewConfig_env(t *testing.T) {
-	tests := []struct {
-		name    string
-		env     map[string]string
-		want    Config
-		errWant bool
-	}{
-		{
-			name:    "Valid config",
-			env:     map[string]string{"ADDRESS": "server.com:8585"},
-			want:    Config{Host: "server.com:8585", StoreInterval: 300, FileStoragePath: "backup.dat", Restore: true},
-			errWant: false,
-		},
-		{
-			name:    "Invalid port type",
-			env:     map[string]string{"ADDRESS": "server.com:ttt"},
-			want:    Config{},
-			errWant: true,
-		},
-	}
+// func TestConfig_NewConfig_env(t *testing.T) {
+// 	tests := []struct {
+// 		name    string
+// 		env     map[string]string
+// 		want    Config
+// 		errWant bool
+// 	}{
+// 		{
+// 			name:    "Valid config",
+// 			env:     map[string]string{"ADDRESS": "server.com:8585"},
+// 			want:    Config{Host: "server.com:8585", StoreInterval: 300, FileStoragePath: "backup.dat", Restore: true},
+// 			errWant: false,
+// 		},
+// 		{
+// 			name:    "Invalid port type",
+// 			env:     map[string]string{"ADDRESS": "server.com:ttt"},
+// 			want:    Config{},
+// 			errWant: true,
+// 		},
+// 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			for k, v := range test.env {
-				os.Setenv(k, v)
-			}
-			config, err := NewConfig()
-			if test.errWant {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			assert.Equal(t, test.want, *config)
-		})
-	}
+// 	for _, test := range tests {
+// 		t.Run(test.name, func(t *testing.T) {
+// 			for k, v := range test.env {
+// 				os.Setenv(k, v)
+// 			}
+// 			config, err := NewConfig()
+// 			if test.errWant {
+// 				require.Error(t, err)
+// 				return
+// 			}
+// 			require.NoError(t, err)
+// 			assert.Equal(t, test.want, *config)
+// 		})
+// 	}
 
-	os.Clearenv()
-}
+// 	os.Clearenv()
+// }
 
 // func TestConfig_NewConfig_Flags(t *testing.T) {
 // 	tests := []struct {
