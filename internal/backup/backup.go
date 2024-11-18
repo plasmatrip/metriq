@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/plasmatrip/metriq/internal/logger"
@@ -20,12 +21,12 @@ type Backup struct {
 }
 
 func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
-	// dir := filepath.Dir(cfg.FileStoragePath)
-	// if _, err := os.Stat(dir); err != nil {
-	// 	if err := os.Mkdir(dir, 0755); err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+	dir := filepath.Dir(cfg.FileStoragePath)
+	if _, err := os.Stat(dir); err != nil {
+		if err := os.Mkdir(dir, 0755); err != nil {
+			return nil, err
+		}
+	}
 
 	return &Backup{
 		cfg:  cfg,
@@ -40,6 +41,7 @@ func (bkp Backup) Start() {
 			bkp.lg.Sugar.Fatalw("error loading from backup: ", err)
 		}
 	}
+	bkp.load()
 
 	if bkp.cfg.StoreInterval == 0 {
 		go func() {
@@ -68,10 +70,8 @@ func (bkp Backup) Start() {
 }
 
 func (bkp Backup) Save() error {
-	bkp.lg.Sugar.Infow("save data")
 	file, err := os.OpenFile(bkp.cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		bkp.lg.Sugar.Infow("error: ", err)
 		return err
 	}
 	defer file.Close()
@@ -94,9 +94,7 @@ func (bkp Backup) load() error {
 
 	file, err := os.OpenFile(bkp.cfg.FileStoragePath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		if err == os.ErrNotExist {
-			return nil
-		}
+		return err
 	}
 	defer file.Close()
 

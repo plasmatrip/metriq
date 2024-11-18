@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env"
 )
 
 const (
@@ -26,39 +26,36 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
-	config := new(Config)
+	cfg := new(Config)
 
-	// читаем переменную окружения, при ошибке прокидываем ее наверх
-	if err := env.Parse(config); err != nil {
+	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
+	// читаем переменные окружения, при ошибке прокидываем ее наверх
+	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
 	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
-	if len(config.Host) != 0 {
-		if err := parseAddress(config); err != nil {
-			return nil, fmt.Errorf("port parsing error: %w", err)
-		}
-
-		return config, nil
+	if _, exist := os.LookupEnv("ADDRESS"); !exist {
+		cl.StringVar(&cfg.Host, "a", host+":"+port, "Server address host:port")
 	}
-
-	//проверяем флаги
-	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	cl.StringVar(&config.Host, "a", host+":"+port, "Server address host:port")
-	cl.IntVar(&config.StoreInterval, "i", storeinterval, "Time interval in seconds for saving the metrics to a file")
-	cl.StringVar(&config.FileStoragePath, "f", fileStoragePath, "Path to the file where metrics are saved")
-	cl.BoolVar(&config.Restore, "r", restore, "Whether to load saved metrics from a file or not")
-
-	// ошибке парсинга прокидываем ошибку наверх
-	if err := cl.Parse(os.Args[1:]); err != nil {
-		return nil, fmt.Errorf("failed to parse flags: %w", err)
-	}
-
-	if err := parseAddress(config); err != nil {
+	if err := parseAddress(cfg); err != nil {
 		return nil, fmt.Errorf("port parsing error: %w", err)
 	}
 
-	return config, nil
+	if _, exist := os.LookupEnv("STORE_INTERVAL"); !exist {
+		cl.IntVar(&cfg.StoreInterval, "i", storeinterval, "Time interval in seconds for saving the metrics to a file")
+	}
+
+	if _, exist := os.LookupEnv("FILE_STORAGE_PATH"); !exist {
+		cl.StringVar(&cfg.FileStoragePath, "f", fileStoragePath, "Path to the file where metrics are saved")
+	}
+
+	if _, exist := os.LookupEnv("RESTORE"); !exist {
+		cl.BoolVar(&cfg.Restore, "r", restore, "Whether to load saved metrics from a file or not")
+	}
+
+	return cfg, nil
 }
 
 func parseAddress(config *Config) error {

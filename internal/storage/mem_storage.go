@@ -31,7 +31,6 @@ func NewStorage() *MemStorage {
 
 func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	ms.Mu.Lock()
-	// defer ms.Mu.Unlock()
 	var err error
 	switch metric.MetricType {
 	case types.Gauge:

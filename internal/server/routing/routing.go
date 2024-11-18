@@ -10,7 +10,7 @@ import (
 )
 
 func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux {
-	h := handlers.NewHandlers(s, c)
+	h := handlers.NewHandlers(s, c, *l)
 
 	r := chi.NewRouter()
 

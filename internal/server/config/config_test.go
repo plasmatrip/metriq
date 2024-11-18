@@ -60,7 +60,7 @@ func TestConfig_NewConfig_env(t *testing.T) {
 		{
 			name:    "Valid config",
 			env:     map[string]string{"ADDRESS": "server.com:8585"},
-			want:    Config{Host: "server.com:8585"},
+			want:    Config{Host: "server.com:8585", StoreInterval: 300, FileStoragePath: "backup.dat", Restore: true},
 			errWant: false,
 		},
 		{

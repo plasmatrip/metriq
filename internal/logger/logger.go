@@ -67,7 +67,8 @@ func (l *Logger) WithLogging(next http.Handler) http.Handler {
 		case http.MethodGet:
 			logMsg = append(logMsg, "URI", r.RequestURI, "  METHOD:", r.Method, "  DURATION:", duration)
 		case http.MethodPost:
-			logMsg = append(logMsg, "URI", r.RequestURI, "  METHOD:", r.Method, "  DURATION:", duration, "  STATUS", responseData.status, "  SIZE", responseData.size)
+			logMsg = append(logMsg, "URI", r.RequestURI, "  METHOD:", r.Method,
+				"  DURATION:", duration, "  STATUS", responseData.status, "  SIZE", responseData.size)
 		}
 
 		l.Sugar.Infoln(logMsg...)

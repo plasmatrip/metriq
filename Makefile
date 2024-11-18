@@ -37,7 +37,7 @@ fmt:
 
 SERVER_PORT := 8080
 ADDRESS := "localhost:8080"
-TEMP_FILE := ./data/backup.dat
+TEMP_FILE := backup.dat
 .PHONY : run-autotests
 run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9
 
