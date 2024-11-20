@@ -45,19 +45,20 @@ func (bkp Backup) Start() {
 
 	if bkp.cfg.StoreInterval == 0 {
 		go func() {
-			c := make(chan bool)
+			c := make(chan struct{})
 			defer close(c)
 
 			bkp.stor.SetBackup(c)
-			for {
-				if <-c {
-					bkp.Save()
-				}
+			select {
+			case <-c:
+				bkp.Save()
+			default:
 			}
 		}()
 	} else {
 		ticker := time.NewTicker(time.Duration(bkp.cfg.StoreInterval) * time.Second)
 		go func() {
+			defer ticker.Stop()
 			for range ticker.C {
 				err := bkp.Save()
 				if err != nil {

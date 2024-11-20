@@ -39,9 +39,6 @@ func NewConfig() (*Config, error) {
 	if _, exist := os.LookupEnv("ADDRESS"); !exist {
 		cl.StringVar(&cfg.Host, "a", host+":"+port, "Server address host:port")
 	}
-	if err := parseAddress(cfg); err != nil {
-		return nil, fmt.Errorf("port parsing error: %w", err)
-	}
 
 	if _, exist := os.LookupEnv("STORE_INTERVAL"); !exist {
 		cl.IntVar(&cfg.StoreInterval, "i", storeinterval, "Time interval in seconds for saving the metrics to a file")
@@ -59,20 +56,24 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
 
+	if err := parseAddress(cfg); err != nil {
+		return nil, fmt.Errorf("port parsing error: %w", err)
+	}
+
 	return cfg, nil
 }
 
-func parseAddress(config *Config) error {
-	args := strings.Split(config.Host, ":")
+func parseAddress(cfg *Config) error {
+	args := strings.Split(cfg.Host, ":")
 	if len(args) == 2 {
 		if len(args[0]) == 0 || len(args[1]) == 0 {
-			config.Host = host + ":" + port
+			cfg.Host = host + ":" + port
 			return nil
 		}
 
 		_, err := strconv.ParseInt(args[1], 10, 64)
 		return err
 	}
-	config.Host = host + ":" + port
+	cfg.Host = host + ":" + port
 	return nil
 }

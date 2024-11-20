@@ -131,3 +131,19 @@ func TestMemStorage_Get(t *testing.T) {
 		})
 	}
 }
+
+func TestMemStorage_Metrics(t *testing.T) {
+	storage := NewStorage()
+	storage.SetMetric("metric", types.Metric{MetricType: types.Gauge, Value: float64(100)})
+	storage.SetMetric("counter", types.Metric{MetricType: types.Counter, Value: int64(100)})
+
+	t.Run("Get all metrics", func(t *testing.T) {
+		metrics := storage.Metrics()
+		assert.NotEmpty(t, metrics)
+		assert.Len(t, metrics, 3)
+		assert.Contains(t, metrics, "metric")
+		assert.Contains(t, metrics, "counter")
+		assert.Equal(t, types.Metric{MetricType: types.Gauge, Value: float64(100)}, metrics["metric"])
+		assert.Equal(t, types.Metric{MetricType: types.Counter, Value: int64(100)}, metrics["counter"])
+	})
+}

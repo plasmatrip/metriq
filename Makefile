@@ -21,6 +21,7 @@ test:
 clean:
 	-rm ./bin/agent 2>/dev/null
 	-rm ./bin/server 2>/dev/null
+	-rm ./bin/backup.dat 2>/dev/null
 	-rm ./cover.out 2>/dev/null
 
 check-coverage:

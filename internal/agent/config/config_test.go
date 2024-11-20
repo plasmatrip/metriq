@@ -1,4 +1,4 @@
-package agent
+package config
 
 import (
 	"os"
@@ -97,6 +97,7 @@ func TestConfig_NewConfig_env(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			os.Args = []string{os.Args[0]}
 			for k, v := range test.env {
 				os.Setenv(k, v)
 			}

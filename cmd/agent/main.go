@@ -1,20 +1,27 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"sync"
 	"time"
 
-	"github.com/plasmatrip/metriq/internal/agent"
+	"github.com/plasmatrip/metriq/internal/agent/config"
+	"github.com/plasmatrip/metriq/internal/agent/controller"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func main() {
-	config, err := agent.NewConfig()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	config, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
-	controller := agent.NewController(storage.NewStorage(), *config)
+	controller := controller.NewController(storage.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -26,6 +33,7 @@ func main() {
 			time.Sleep(time.Duration(config.PollInterval) * time.Second)
 		}
 	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -42,5 +50,9 @@ The interval for collecting metrics is %d seconds, the interval for transmitting
 Server address: %s
 `, config.PollInterval, config.ReportInterval, config.Host)
 
+	<-ctx.Done()
+
 	wg.Wait()
+
+	os.Exit(0)
 }
