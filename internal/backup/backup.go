@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -15,12 +16,13 @@ import (
 )
 
 type Backup struct {
+	ctx  context.Context
 	cfg  config.Config
 	stor storage.Repository
 	lg   *logger.Logger
 }
 
-func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
+func NewBackup(ctx context.Context, cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
 	dir := filepath.Dir(cfg.FileStoragePath)
 	if _, err := os.Stat(dir); err != nil {
 		if err := os.Mkdir(dir, 0755); err != nil {
@@ -29,6 +31,7 @@ func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*
 	}
 
 	return &Backup{
+		ctx:  ctx,
 		cfg:  cfg,
 		stor: stor,
 		lg:   lg,
@@ -64,6 +67,11 @@ func (bkp Backup) Start() {
 				if err != nil {
 					bkp.lg.Sugar.Infow("error saving to backup: ", err)
 				}
+			}
+			select {
+			case <-bkp.ctx.Done():
+				bkp.Save()
+			default:
 			}
 		}()
 	}

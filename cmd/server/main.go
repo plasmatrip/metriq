@@ -30,7 +30,7 @@ func main() {
 
 	s := storage.NewStorage()
 
-	backup, err := backup.NewBackup(*c, s, l)
+	backup, err := backup.NewBackup(ctx, *c, s, l)
 	if err != nil {
 		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
 	}
