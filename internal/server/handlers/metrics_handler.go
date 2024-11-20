@@ -11,7 +11,7 @@ func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics := h.Repo.GetAll()
+	metrics := h.Repo.Metrics()
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>
@@ -26,7 +26,7 @@ func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		</html>
 		`, metrics)
 
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(html))
 	if err != nil {

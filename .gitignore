@@ -24,5 +24,9 @@ vendor/
 .idea
 .vscode
 metricstest
-golangci-lint/golangci.yml
-golangci-lint/report-unformatted.json
+golangci-lint
+bin/agent
+bin/server
+cover.html
+backup.dat
+bin

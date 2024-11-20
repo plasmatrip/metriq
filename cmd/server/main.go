@@ -1,32 +1,59 @@
 package main
 
 import (
-	"log"
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/plasmatrip/metriq/internal/server"
-	"github.com/plasmatrip/metriq/internal/server/handlers"
+	"github.com/plasmatrip/metriq/internal/backup"
+	"github.com/plasmatrip/metriq/internal/logger"
+	"github.com/plasmatrip/metriq/internal/server/config"
+	"github.com/plasmatrip/metriq/internal/server/routing"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func main() {
-	config := server.NewConfig()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
 
-	r := chi.NewRouter()
-
-	handlers := handlers.NewHandlers(storage.NewStorage())
-
-	r.Post("/update/*", handlers.UpdateHandler)
-	r.Get("/value/*", handlers.ValueHandler)
-	r.Get("/", handlers.MetricsHandler)
-
-	err := http.ListenAndServe(config.Host, func(next http.Handler) http.Handler {
-		log.Printf(`The metrics collection server is running. Server address: %s
-		`, config.Host)
-		return next
-	}(r))
+	c, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
+
+	l, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+
+	s := storage.NewStorage()
+
+	backup, err := backup.NewBackup(*c, s, l)
+	if err != nil {
+		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
+	}
+	backup.Start()
+
+	server := http.Server{
+		Addr: c.Host,
+		Handler: func(next http.Handler) http.Handler {
+			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
+			return next
+		}(routing.NewRouter(s, *c, l)),
+	}
+
+	go server.ListenAndServe()
+
+	<-ctx.Done()
+
+	err = backup.Save()
+	if err != nil {
+		l.Sugar.Infow("error saving to backup: ", err, " ", c.FileStoragePath)
+	}
+
+	server.Shutdown(context.Background())
+
+	os.Exit(0)
 }

@@ -3,9 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/plasmatrip/metriq/internal/server"
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
@@ -15,26 +13,23 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uri := strings.Split(r.URL.RequestURI(), "/")
-
-	if len(uri) != server.ValueURLLen {
-		http.Error(w, "Request not recognized!", http.StatusNotFound)
+	//получаем имя метрики
+	mName := r.PathValue("metricName")
+	if len(mName) == 0 {
+		http.Error(w, "Metric name is undefined", http.StatusBadRequest)
 		return
 	}
 
-	//проверяем имя метрики
-	metricName := uri[server.RequestNamePos]
-
 	//проверяем тип метрики
-	metricType := uri[server.RequestTypePos]
-	if err := server.CheckMetricType(metricType); err != nil {
+	mType := r.PathValue("metricType")
+	if err := types.CheckMetricType(mType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	metric, ok := h.Repo.Get(metricName)
+	metric, ok := h.Repo.Metric(mName)
 	if !ok {
-		http.Error(w, "metric not found", http.StatusNotFound)
+		http.Error(w, "Metric not found", http.StatusNotFound)
 		return
 	}
 
@@ -43,20 +38,20 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 	case types.Gauge:
 		value, ok := metric.Value.(float64)
 		if !ok {
-			http.Error(w, "failed to cast the received value to type float64", http.StatusInternalServerError)
+			http.Error(w, "Failed to cast the received value to type float64", http.StatusInternalServerError)
 			return
 		}
 		formatedValue = strconv.FormatFloat(float64(value), 'f', -1, 64)
 	case types.Counter:
 		value, ok := metric.Value.(int64)
 		if !ok {
-			http.Error(w, "failed to cast the received value to type int64", http.StatusInternalServerError)
+			http.Error(w, "Failed to cast the received value to type int64", http.StatusInternalServerError)
 			return
 		}
 		formatedValue = strconv.FormatInt(int64(value), 10)
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(formatedValue))
 	if err != nil {

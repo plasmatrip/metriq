@@ -2,43 +2,58 @@ package storage
 
 import (
 	"errors"
+	"maps"
 	"sync"
 
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
-type Metric struct {
-	MetricType string
-	Value      any
-}
+type storage map[string]types.Metric
 
 type MemStorage struct {
-	Mu      sync.Mutex
-	Storage map[string]Metric
+	Mu      sync.RWMutex
+	Storage storage
+	bkp     backup
+}
+
+type backup struct {
+	do bool
+	c  chan bool
 }
 
 func NewStorage() *MemStorage {
 	return &MemStorage{
-		Mu:      sync.Mutex{},
-		Storage: map[string]Metric{},
+		Mu:      sync.RWMutex{},
+		Storage: make(storage),
+		bkp:     backup{do: false, c: nil},
 	}
 }
 
-func (ms *MemStorage) Update(key string, metric Metric) error {
+func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	ms.Mu.Lock()
-	defer ms.Mu.Unlock()
+	var err error
 	switch metric.MetricType {
 	case types.Gauge:
-		ms.Storage[key] = metric
-		ms.updateCounter(types.PollCount, Metric{MetricType: types.Counter, Value: int64(1)})
+		if err := metric.Check(); err != nil {
+			return err
+		}
+		ms.Storage[mName] = metric
+		err = ms.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
 	case types.Counter:
-		ms.updateCounter(key, metric)
+		err = ms.setCounter(mName, metric)
 	}
-	return nil
+
+	ms.Mu.Unlock()
+
+	if ms.bkp.do {
+		ms.bkp.c <- true
+	}
+
+	return err
 }
 
-func (ms *MemStorage) updateCounter(key string, metric Metric) error {
-	if oldMetric, ok := ms.Storage[key]; ok {
+func (ms *MemStorage) setCounter(mName string, metric types.Metric) error {
+	if oldMetric, ok := ms.Storage[mName]; ok {
 		oldValue, ok := oldMetric.Value.(int64)
 		if !ok {
 			return errors.New("failed to cast stored value to type int64")
@@ -47,20 +62,29 @@ func (ms *MemStorage) updateCounter(key string, metric Metric) error {
 		if !ok {
 			return errors.New("failed to cast the received value to type int64")
 		}
-		ms.Storage[key] = Metric{MetricType: metric.MetricType, Value: oldValue + newValue}
+		ms.Storage[mName] = types.Metric{MetricType: metric.MetricType, Value: oldValue + newValue}
 		return nil
 	}
-	ms.Storage[key] = metric
+	ms.Storage[mName] = metric
 	return nil
 }
 
-func (ms *MemStorage) Get(key string) (Metric, bool) {
-	if metric, ok := ms.Storage[key]; ok {
-		return metric, true
-	}
-	return Metric{}, false
+func (ms *MemStorage) SetBackup(c chan bool) {
+	ms.bkp.do = true
+	ms.bkp.c = c
 }
 
-func (ms *MemStorage) GetAll() map[string]Metric {
-	return ms.Storage
+func (ms *MemStorage) Metric(key string) (types.Metric, bool) {
+	ms.Mu.RLock()
+	defer ms.Mu.RUnlock()
+	metric, ok := ms.Storage[key]
+	return metric, ok
+}
+
+func (ms *MemStorage) Metrics() map[string]types.Metric {
+	ms.Mu.RLock()
+	defer ms.Mu.RUnlock()
+	copyStorage := make(storage, len(ms.Storage))
+	maps.Copy(copyStorage, ms.Storage)
+	return copyStorage
 }

@@ -10,8 +10,11 @@ import (
 )
 
 func main() {
-	config := agent.NewConfig()
-	controller := agent.NewController(storage.NewStorage())
+	config, err := agent.NewConfig()
+	if err != nil {
+		panic(err)
+	}
+	controller := agent.NewController(storage.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -27,8 +30,8 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics("http://" + config.Host); err != nil {
-				fmt.Print(err)
+			if err := controller.SendMetrics(); err != nil {
+				fmt.Println("Error: ", err)
 			}
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
