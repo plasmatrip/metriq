@@ -16,7 +16,7 @@ import (
 )
 
 type Backup struct {
-	ctx  context.Context
+	// ctx  context.Context
 	cfg  config.Config
 	stor storage.Repository
 	lg   *logger.Logger
@@ -31,7 +31,7 @@ func NewBackup(ctx context.Context, cfg config.Config, stor storage.Repository, 
 	}
 
 	return &Backup{
-		ctx:  ctx,
+		// ctx:  ctx,
 		cfg:  cfg,
 		stor: stor,
 		lg:   lg,
@@ -68,11 +68,11 @@ func (bkp Backup) Start() {
 					bkp.lg.Sugar.Infow("error saving to backup: ", err)
 				}
 			}
-			select {
-			case <-bkp.ctx.Done():
-				bkp.Save()
-			default:
-			}
+			// select {
+			// case <-bkp.ctx.Done():
+			// 	bkp.Save()
+			// default:
+			// }
 		}()
 	}
 
