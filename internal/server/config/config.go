@@ -22,7 +22,8 @@ type Config struct {
 	Host            string `env:"ADDRESS"`
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
-	Restore         bool   `end:"RESTORE"`
+	Restore         bool   `env:"RESTORE"`
+	DSN             string `env:"DATABASE_DSN"`
 }
 
 func NewConfig() (*Config, error) {
@@ -50,6 +51,10 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("RESTORE"); !exist {
 		cl.BoolVar(&cfg.Restore, "r", restore, "Whether to load saved metrics from a file or not")
+	}
+
+	if _, exist := os.LookupEnv("DATABASE_DSN"); !exist {
+		cl.StringVar(&cfg.DSN, "d", "", "Data source name to connect to the database")
 	}
 
 	if err := cl.Parse(os.Args[1:]); err != nil {

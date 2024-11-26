@@ -8,10 +8,10 @@ import (
 )
 
 func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
+	// if r.Method != http.MethodGet {
+	// 	http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+	// 	return
+	// }
 
 	//получаем имя метрики
 	mName := r.PathValue("metricName")

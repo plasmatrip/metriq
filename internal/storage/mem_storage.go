@@ -29,6 +29,10 @@ func NewStorage() *MemStorage {
 	}
 }
 
+func (ms *MemStorage) Ping() error {
+	return nil
+}
+
 func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	ms.Mu.Lock()
 	var err error

@@ -8,10 +8,10 @@ import (
 )
 
 func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
+	// 	return
+	// }
 
 	//проверяем тип метрики
 	mType := r.PathValue("metricType")

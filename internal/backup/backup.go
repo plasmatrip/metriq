@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -22,7 +21,7 @@ type Backup struct {
 	lg   *logger.Logger
 }
 
-func NewBackup(ctx context.Context, cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
+func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
 	dir := filepath.Dir(cfg.FileStoragePath)
 	if _, err := os.Stat(dir); err != nil {
 		if err := os.Mkdir(dir, 0755); err != nil {

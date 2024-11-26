@@ -26,6 +26,7 @@ func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux
 	})
 	r.Get("/value/{metricType}/{metricName}", h.ValueHandler)
 	r.Get("/", h.MetricsHandler)
+	r.Get("/ping", h.PingHandler)
 
 	return r
 }
