@@ -28,10 +28,10 @@ func NewPostgresStorage(dsn string) (*PosrgresStorage, error) {
 	}, nil
 }
 
-func (p PosrgresStorage) Ping() error {
+func (ps PosrgresStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if err := p.DB.PingContext(ctx); err != nil {
+	if err := ps.DB.PingContext(ctx); err != nil {
 		return err
 	}
 	return nil
