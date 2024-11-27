@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"sync"
 	"time"
 
@@ -14,8 +12,8 @@ import (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	// ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	// defer stop()
 
 	config, err := config.NewConfig()
 	if err != nil {
@@ -50,7 +48,7 @@ The interval for collecting metrics is %d seconds, the interval for transmitting
 Server address: %s
 `, config.PollInterval, config.ReportInterval, config.Host)
 
-	<-ctx.Done()
+	// <-ctx.Done()
 
 	wg.Wait()
 
