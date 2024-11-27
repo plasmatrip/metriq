@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"maps"
 	"sync"
@@ -29,7 +30,11 @@ func NewStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) Ping() error {
+func (ms *MemStorage) Ping(ctx context.Context) error {
+	return nil
+}
+
+func (ms *MemStorage) Close() error {
 	return nil
 }
 

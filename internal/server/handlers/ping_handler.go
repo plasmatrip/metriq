@@ -5,12 +5,13 @@ import (
 )
 
 func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
-	err := h.Repo.Ping()
+	w.Header().Set("Content-Type", "text/html")
+
+	err := h.Repo.Ping(r.Context())
 	if err != nil {
-		http.Error(w, "Failed to ping datbase", http.StatusInternalServerError)
+		h.lg.Sugar.Infow(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 }

@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -11,34 +10,32 @@ import (
 )
 
 type PosrgresStorage struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewPostgresStorage(dsn string) (*PosrgresStorage, error) {
-	// dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
-	// 	`localhost`, `metriq`, ``, `metriq`)
-
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PosrgresStorage{
-		DB: db,
+		db: db,
 	}, nil
 }
 
-func (ps PosrgresStorage) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	if err := ps.DB.PingContext(ctx); err != nil {
-		return err
-	}
-	return nil
+func (ps PosrgresStorage) Ping(ctx context.Context) error {
+	//ctx, cancel := context.WithCancel(context.Background()) //, 1*time.Second)
+	//defer cancel()
+	// if err := ps.DB.PingContext(ctx); err != nil {
+	// 	return err
+	// }
+	// return nil
+	return ps.db.PingContext(ctx)
 }
 
 func (ps PosrgresStorage) Close() error {
-	err := ps.DB.Close()
+	err := ps.db.Close()
 	if err != nil {
 		return err
 	}
