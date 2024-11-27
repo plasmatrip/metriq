@@ -1,4 +1,4 @@
-package agent
+package controller
 
 import (
 	"bytes"
@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/plasmatrip/metriq/internal/agent/compress"
+	"github.com/plasmatrip/metriq/internal/agent/config"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/types"
 )
@@ -15,48 +17,40 @@ import (
 type Controller struct {
 	Repo   storage.Repository
 	Client http.Client
-	config Config
+	config config.Config
 }
 
-func NewController(repo storage.Repository, config Config) *Controller {
+func NewController(repo storage.Repository, config config.Config) *Controller {
 	return &Controller{Repo: repo, Client: http.Client{Timeout: time.Second * 5}, config: config}
 }
 
 func (c Controller) SendMetrics() error {
 	for mName, metric := range c.Repo.Metrics() {
-		if err := c.send(mName, metric); err != nil {
+		jMetric := metric.Convert(mName)
+		data, err := json.Marshal(jMetric)
+		if err != nil {
 			return err
 		}
+
+		data, err = compress.Compress(data)
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest(http.MethodPost, "http://"+c.config.Host+"/update", bytes.NewReader(data))
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Encoding", "application/gzip")
+
+		resp, err := c.Client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
 	}
-	return nil
-}
-
-func (c Controller) send(mName string, metric types.Metric) error {
-	jMetric := metric.Convert(mName)
-	data, err := json.Marshal(jMetric)
-	if err != nil {
-		return err
-	}
-
-	data, err = Compress(data)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, "http://"+c.config.Host+"/update", bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Content-Encoding", "application/gzip")
-
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
 	return nil
 }
 

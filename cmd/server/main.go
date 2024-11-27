@@ -28,7 +28,17 @@ func main() {
 	}
 	defer l.Close()
 
-	s := storage.NewStorage()
+	var s storage.Repository
+	if len(c.DSN) == 0 {
+		s = storage.NewStorage()
+	} else {
+		s, err = storage.NewPostgresStorage(c.DSN)
+		if err != nil {
+			l.Sugar.Infow("database connection error: ", err)
+		}
+	}
+
+	// s := storage.NewStorage()
 
 	backup, err := backup.NewBackup(*c, s, l)
 	if err != nil {
@@ -40,6 +50,7 @@ func main() {
 		Addr: c.Host,
 		Handler: func(next http.Handler) http.Handler {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
+			// l.Sugar.Infow("Server config: store interval - %d, backup file - %s, restore - %v", c.StoreInterval, c.FileStoragePath, c.Restore)
 			return next
 		}(routing.NewRouter(s, *c, l)),
 	}

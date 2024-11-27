@@ -2,19 +2,21 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/plasmatrip/metriq/internal/agent"
+	"github.com/plasmatrip/metriq/internal/agent/config"
+	"github.com/plasmatrip/metriq/internal/agent/controller"
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
 func main() {
-	config, err := agent.NewConfig()
+	config, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
-	controller := agent.NewController(storage.NewStorage(), *config)
+	controller := controller.NewController(storage.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -43,4 +45,6 @@ Server address: %s
 `, config.PollInterval, config.ReportInterval, config.Host)
 
 	wg.Wait()
+
+	os.Exit(0)
 }

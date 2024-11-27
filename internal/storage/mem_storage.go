@@ -18,7 +18,7 @@ type MemStorage struct {
 
 type backup struct {
 	do bool
-	c  chan bool
+	c  chan struct{}
 }
 
 func NewStorage() *MemStorage {
@@ -29,27 +29,39 @@ func NewStorage() *MemStorage {
 	}
 }
 
+func (ms *MemStorage) Ping() error {
+	return nil
+}
+
 func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	ms.Mu.Lock()
-	var err error
 	switch metric.MetricType {
 	case types.Gauge:
 		if err := metric.Check(); err != nil {
+			ms.Mu.Unlock()
 			return err
 		}
 		ms.Storage[mName] = metric
-		err = ms.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
+		err := ms.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
+		if err != nil {
+			ms.Mu.Unlock()
+			return err
+		}
 	case types.Counter:
-		err = ms.setCounter(mName, metric)
+		err := ms.setCounter(mName, metric)
+		if err != nil {
+			ms.Mu.Unlock()
+			return err
+		}
 	}
 
 	ms.Mu.Unlock()
 
 	if ms.bkp.do {
-		ms.bkp.c <- true
+		ms.bkp.c <- struct{}{}
 	}
 
-	return err
+	return nil
 }
 
 func (ms *MemStorage) setCounter(mName string, metric types.Metric) error {
@@ -69,7 +81,7 @@ func (ms *MemStorage) setCounter(mName string, metric types.Metric) error {
 	return nil
 }
 
-func (ms *MemStorage) SetBackup(c chan bool) {
+func (ms *MemStorage) SetBackup(c chan struct{}) {
 	ms.bkp.do = true
 	ms.bkp.c = c
 }
