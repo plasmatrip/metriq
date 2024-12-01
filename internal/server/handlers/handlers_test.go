@@ -64,7 +64,7 @@ func TestUpdateHandlers(t *testing.T) {
 	}
 	h := NewHandlers(storage.NewStorage(), config.Config{}, logger.Logger{})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
+	mux.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", h.Update)
 	serv := httptest.NewServer(mux)
 	defer serv.Close()
 

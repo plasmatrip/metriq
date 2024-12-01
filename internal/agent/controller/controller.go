@@ -10,6 +10,7 @@ import (
 
 	"github.com/plasmatrip/metriq/internal/agent/compress"
 	"github.com/plasmatrip/metriq/internal/agent/config"
+	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/types"
 )
@@ -24,9 +25,47 @@ func NewController(repo storage.Repository, config config.Config) *Controller {
 	return &Controller{Repo: repo, Client: http.Client{Timeout: time.Second * 5}, config: config}
 }
 
+func (c Controller) SendMetricsBatch() error {
+	metrics, err := c.Repo.Metrics()
+	if err != nil {
+		return err
+	}
+
+	sMetrics := models.SMetrics{}
+	sMetrics.Metrics = make([]models.Metrics, 0, len(metrics))
+	for mName, metric := range metrics {
+		sMetrics.Metrics = append(sMetrics.Metrics, metric.Convert(mName))
+	}
+
+	data, err := json.Marshal(sMetrics)
+	if err != nil {
+		return err
+	}
+
+	data, err = compress.Compress(data)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "http://"+c.config.Host+"/updates", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "application/gzip")
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 func (c Controller) SendMetrics() error {
 	metrics, err := c.Repo.Metrics()
-
 	if err != nil {
 		return err
 	}

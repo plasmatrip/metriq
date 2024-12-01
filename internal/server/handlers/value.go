@@ -7,7 +7,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
-func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) Value(w http.ResponseWriter, r *http.Request) {
 	//получаем имя метрики
 	mName := r.PathValue("metricName")
 	if len(mName) == 0 {

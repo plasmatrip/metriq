@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) Ping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
 	err := h.Repo.Ping(r.Context())

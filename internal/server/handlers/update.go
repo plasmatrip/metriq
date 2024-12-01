@@ -7,7 +7,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
-func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 	//проверяем тип метрики
 	mType := r.PathValue("metricType")
 	if err := types.CheckMetricType(mType); err != nil {

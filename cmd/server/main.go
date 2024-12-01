@@ -33,7 +33,7 @@ func main() {
 	if c.DSN == "" {
 		s = storage.NewStorage()
 	} else {
-		s, err = db.NewPostgresStorage(c.DSN)
+		s, err = db.NewPostgresStorage(c.DSN, *l)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
 			os.Exit(1)
@@ -51,7 +51,7 @@ func main() {
 		Addr: c.Host,
 		Handler: func(next http.Handler) http.Handler {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
-			l.Sugar.Infow("Server config: ", "store interval: ", c.StoreInterval, "backup file: ", c.FileStoragePath, "DSN: ", c.DSN)
+			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN)
 			return next
 		}(routing.NewRouter(s, *c, l)),
 	}

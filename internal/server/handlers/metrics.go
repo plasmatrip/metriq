@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) Metrics(w http.ResponseWriter, r *http.Request) {
 	metrics, err := h.Repo.Metrics()
 
 	if err != nil {

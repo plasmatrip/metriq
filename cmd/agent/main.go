@@ -32,7 +32,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := controller.SendMetrics(); err != nil {
+			if err := controller.SendMetricsBatch(); err != nil {
 				fmt.Println("Error: ", err)
 			}
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)

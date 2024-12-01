@@ -6,6 +6,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
@@ -35,6 +36,24 @@ func (ms *MemStorage) Ping(ctx context.Context) error {
 }
 
 func (ms *MemStorage) Close() error {
+	return nil
+}
+func (ms *MemStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
+	for _, metric := range metrics.Metrics {
+		switch metric.MType {
+		case types.Gauge:
+			err := ms.SetMetric(metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Value})
+			if err != nil {
+				return err
+			}
+		case types.Counter:
+			err := ms.SetMetric(metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Delta})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
