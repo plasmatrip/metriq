@@ -11,11 +11,6 @@ import (
 func (h *Handlers) JSONValueHandler(w http.ResponseWriter, r *http.Request) {
 	var jMetric models.Metrics
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
-
 	if err := json.NewDecoder(r.Body).Decode(&jMetric); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

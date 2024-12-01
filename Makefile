@@ -38,8 +38,8 @@ fmt:
 SERVER_PORT := 8080
 ADDRESS := "localhost:8080"
 TEMP_FILE := backup.dat
-.PHONY : run-autotests
-run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9
+.PHONY : run-autotestsg
+run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10
 
 .PHONY : iter1
 iter1:
@@ -77,3 +77,7 @@ iter8:
 .PHONY : iter9
 iter9:
 	metricstest -test.run=^TestIteration9$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -file-storage-path=$(TEMP_FILE) -server-port=$(SERVER_PORT) -source-path=.
+
+.PHONY : iter10
+iter10:
+	 metricstest -test.run=^TestIteration10[AB]$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' -server-port=$(SERVER_PORT) -source-path=.

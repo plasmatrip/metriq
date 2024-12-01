@@ -6,20 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestService_CheckType(t *testing.T) {
-	t.Run("Gauge type test", func(t *testing.T) {
-		assert.True(t, checkType(Gauge))
-	})
-
-	t.Run("Counter type test", func(t *testing.T) {
-		assert.True(t, checkType(Counter))
-	})
-
-	t.Run("Wrong type test", func(t *testing.T) {
-		assert.False(t, checkType("wrong type"))
-	})
-}
-
 func TestService_CheckValue(t *testing.T) {
 	t.Run("Float64 value", func(t *testing.T) {
 		_, err := CheckValue(Gauge, "100")
@@ -37,4 +23,43 @@ func TestService_CheckValue(t *testing.T) {
 		_, err := CheckValue(Gauge, "aa")
 		assert.Error(t, err)
 	})
+	t.Run("Wrong type", func(t *testing.T) {
+		_, err := CheckValue("SomeType", "aa")
+		assert.Error(t, err)
+	})
+}
+
+func TestService_CheckMetricType(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		wantErr bool
+		wanrErr bool
+	}{
+		{
+			name:    "Gauge type test",
+			value:   Gauge,
+			wantErr: false,
+		},
+		{
+			name:    "Counter type test",
+			value:   Counter,
+			wantErr: false,
+		},
+		{
+			name:    "Wrong type test",
+			value:   "SomeType",
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := CheckMetricType(test.value)
+			if test.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
 }
