@@ -36,7 +36,7 @@ func main() {
 		s, err = db.NewPostgresStorage(c.DSN)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
-			os.Exit(0)
+			//os.Exit(0)
 		}
 		defer s.Close()
 	}

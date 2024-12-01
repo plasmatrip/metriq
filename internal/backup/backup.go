@@ -120,6 +120,8 @@ func (bkp Backup) load() error {
 			value = *jMetric.Value
 		}
 
+		bkp.lg.Sugar.Infow("load value", "value", value, "type", jMetric.MType, "name", jMetric.ID)
+
 		if err := bkp.stor.SetMetric(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
 			return err
 		}
