@@ -84,4 +84,4 @@ iter10:
 
 .PHONY : iter11
 iter11:
-	 metricstest -test.run=^TestIteration11$ -agent-binary-path=./bin/agent -binary-path=./bin/server -database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' -server-port=$(SERVER_PORT) -source-path=.
+	 metricstest -test.run=^TestIteration11$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' -server-port=$(SERVER_PORT) -source-path=.
