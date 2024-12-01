@@ -11,6 +11,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/server/config"
 	"github.com/plasmatrip/metriq/internal/server/routing"
 	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/storage/db"
 )
 
 func main() {
@@ -32,9 +33,10 @@ func main() {
 	if c.DSN == "" {
 		s = storage.NewStorage()
 	} else {
-		s, err = storage.NewPostgresStorage(c.DSN)
+		s, err = db.NewPostgresStorage(c.DSN)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
+			os.Exit(1)
 		}
 		defer s.Close()
 	}

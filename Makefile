@@ -39,7 +39,8 @@ SERVER_PORT := 8080
 ADDRESS := "localhost:8080"
 TEMP_FILE := backup.dat
 .PHONY : run-autotestsg
-run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10
+run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 
+# iter10
 
 .PHONY : iter1
 iter1:

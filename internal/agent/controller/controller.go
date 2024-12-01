@@ -25,7 +25,13 @@ func NewController(repo storage.Repository, config config.Config) *Controller {
 }
 
 func (c Controller) SendMetrics() error {
-	for mName, metric := range c.Repo.Metrics() {
+	metrics, err := c.Repo.Metrics()
+
+	if err != nil {
+		return err
+	}
+
+	for mName, metric := range metrics {
 		jMetric := metric.Convert(mName)
 		data, err := json.Marshal(jMetric)
 		if err != nil {

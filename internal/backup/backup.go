@@ -53,11 +53,6 @@ func (bkp Backup) Start() {
 				bkp.Save()
 			default:
 			}
-			// for {
-			// 	if <-c {
-			// 		bkp.Save()
-			// 	}
-			// }
 		}()
 	} else {
 		go func() {
@@ -83,7 +78,13 @@ func (bkp Backup) Save() error {
 
 	encoder := json.NewEncoder(file)
 
-	for mName, metric := range bkp.stor.Metrics() {
+	metrics, err := bkp.stor.Metrics()
+
+	if err != nil {
+		return err
+	}
+
+	for mName, metric := range metrics {
 		err := encoder.Encode(metric.Convert(mName))
 		if err != nil {
 			return err

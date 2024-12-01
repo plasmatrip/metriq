@@ -91,17 +91,20 @@ func (ms *MemStorage) SetBackup(c chan struct{}) {
 	ms.bkp.c = c
 }
 
-func (ms *MemStorage) Metric(key string) (types.Metric, bool) {
+func (ms *MemStorage) Metric(key string) (types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	metric, ok := ms.Storage[key]
-	return metric, ok
+	if !ok {
+		return types.Metric{}, errors.New("metric not found")
+	}
+	return metric, nil
 }
 
-func (ms *MemStorage) Metrics() map[string]types.Metric {
+func (ms *MemStorage) Metrics() (map[string]types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))
 	maps.Copy(copyStorage, ms.Storage)
-	return copyStorage
+	return copyStorage, nil
 }

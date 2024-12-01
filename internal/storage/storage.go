@@ -7,9 +7,9 @@ import (
 )
 
 type Repository interface {
-	SetMetric(key string, metric types.Metric) error
-	Metric(key string) (types.Metric, bool)
-	Metrics() map[string]types.Metric
+	SetMetric(mName string, metric types.Metric) error
+	Metric(mName string) (types.Metric, error)
+	Metrics() (map[string]types.Metric, error)
 	SetBackup(chan struct{})
 	Ping(ctx context.Context) error
 	Close() error

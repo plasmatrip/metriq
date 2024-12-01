@@ -22,8 +22,8 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, ok := h.Repo.Metric(mName)
-	if !ok {
+	metric, err := h.Repo.Metric(mName)
+	if err != nil {
 		http.Error(w, "Metric not found", http.StatusNotFound)
 		return
 	}
@@ -48,7 +48,7 @@ func (h *Handlers) ValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte(formatedValue))
+	_, err = w.Write([]byte(formatedValue))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

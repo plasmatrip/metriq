@@ -60,13 +60,16 @@ func TestService_UpdateMetrics(t *testing.T) {
 	controller := NewController(mock, config.Config{})
 
 	t.Run("Send metrics test", func(t *testing.T) {
-		metrics := mock.Metrics()
+		metrics, err := mock.Metrics()
+		assert.NoError(t, err)
 		assert.Empty(t, metrics)
 		controller.UpdateMetrics()
-		metrics = mock.Metrics()
+		metrics, err = mock.Metrics()
+		assert.NoError(t, err)
 		assert.NotEmpty(t, metrics)
 		controller.UpdateMetrics()
-		newMetrics := mock.Metrics()
+		newMetrics, err := mock.Metrics()
+		assert.NoError(t, err)
 		assert.NotEqual(t, metrics, newMetrics)
 	})
 }

@@ -6,7 +6,13 @@ import (
 )
 
 func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	metrics := h.Repo.Metrics()
+	metrics, err := h.Repo.Metrics()
+
+	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>
@@ -23,7 +29,7 @@ func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte(html))
+	_, err = w.Write([]byte(html))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
