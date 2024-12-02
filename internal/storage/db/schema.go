@@ -3,8 +3,8 @@ package db
 const (
 	schema = `
 		CREATE TABLE IF NOT EXISTS metrics (
-			id VARCHAR(64) NOT NULL PRIMARY KEY,
-			mType VARCHAR(64) NOT NULL,
+			id VARCHAR(128) NOT NULL PRIMARY KEY,
+			mType VARCHAR(128) NOT NULL,
 			value DOUBLE PRECISION DEFAULT NULL,
 			delta BIGINT DEFAULT NULL
 		);

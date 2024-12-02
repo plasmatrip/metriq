@@ -37,7 +37,7 @@ func (c Controller) SendMetricsBatch() error {
 		sMetrics.Metrics = append(sMetrics.Metrics, metric.Convert(mName))
 	}
 
-	data, err := json.Marshal(sMetrics)
+	data, err := json.Marshal(sMetrics.Metrics)
 	if err != nil {
 		return err
 	}

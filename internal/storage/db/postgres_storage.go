@@ -177,15 +177,11 @@ func (ps PostgresStorage) Metric(id string) (types.Metric, error) {
 	// делаем запрос в БД
 	row := ps.db.QueryRow("SELECT * FROM metrics WHERE id = @id", pgx.NamedArgs{"id": id})
 
-	ps.lg.Sugar.Infoln("select", "row", row)
-
 	// читаем результат в структуру models.Metrics, при ошибке прокидываем ее наверх
 	err := row.Scan(&m.ID, &m.MType, &m.Value, &m.Delta)
 	if err != nil {
 		return types.Metric{}, err
 	}
-
-	ps.lg.Sugar.Infoln("select", "metric", m)
 
 	// определяем какая метрика получена и заполняем структуру types.Metric для ответа
 	metric := types.Metric{}

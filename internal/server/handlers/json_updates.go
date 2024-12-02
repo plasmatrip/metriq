@@ -11,7 +11,9 @@ import (
 func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 	jMetrics := models.SMetrics{}
 
-	if err := json.NewDecoder(r.Body).Decode(&jMetrics); err != nil {
+	h.lg.Sugar.Infoln(r.Body)
+
+	if err := json.NewDecoder(r.Body).Decode(&jMetrics.Metrics); err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
