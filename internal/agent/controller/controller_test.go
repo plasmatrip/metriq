@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,18 +9,18 @@ import (
 	"testing"
 
 	"github.com/plasmatrip/metriq/internal/agent/config"
-	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/storage/mem"
 	"github.com/plasmatrip/metriq/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockStorage struct {
-	storage.MemStorage
+	mem.MemStorage
 }
 
 func NewMockStorage() *MockStorage {
 	return &MockStorage{
-		storage.MemStorage{
+		mem.MemStorage{
 			Mu:      sync.RWMutex{},
 			Storage: map[string]types.Metric{},
 		},
@@ -27,9 +28,10 @@ func NewMockStorage() *MockStorage {
 }
 
 func TestService_SendMetrics(t *testing.T) {
+	ctx := context.Background()
 	mock := NewMockStorage()
-	mock.SetMetric("metric", types.Metric{MetricType: types.Gauge, Value: 100})
-	mock.SetMetric("counter", types.Metric{MetricType: types.Counter, Value: 100})
+	mock.SetMetric(ctx, "metric", types.Metric{MetricType: types.Gauge, Value: 100})
+	mock.SetMetric(ctx, "counter", types.Metric{MetricType: types.Counter, Value: 100})
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method, "Only POST requests are allowed!")
@@ -59,16 +61,18 @@ func TestService_UpdateMetrics(t *testing.T) {
 
 	controller := NewController(mock, config.Config{})
 
+	ctx := context.Background()
+
 	t.Run("Send metrics test", func(t *testing.T) {
-		metrics, err := mock.Metrics()
+		metrics, err := mock.Metrics(ctx)
 		assert.NoError(t, err)
 		assert.Empty(t, metrics)
-		controller.UpdateMetrics()
-		metrics, err = mock.Metrics()
+		controller.UpdateMetrics(ctx)
+		metrics, err = mock.Metrics(ctx)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, metrics)
-		controller.UpdateMetrics()
-		newMetrics, err := mock.Metrics()
+		controller.UpdateMetrics(ctx)
+		newMetrics, err := mock.Metrics(ctx)
 		assert.NoError(t, err)
 		assert.NotEqual(t, metrics, newMetrics)
 	})

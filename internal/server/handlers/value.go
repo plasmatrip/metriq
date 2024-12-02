@@ -24,7 +24,7 @@ func (h *Handlers) Value(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, err := h.Repo.Metric(mName)
+	metric, err := h.Repo.Metric(r.Context(), mName)
 	if err != nil {
 		h.lg.Sugar.Infoln("Metric name is undefined")
 		http.Error(w, "Metric not found", http.StatusNotFound)

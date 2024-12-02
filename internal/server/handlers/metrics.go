@@ -6,7 +6,7 @@ import (
 )
 
 func (h *Handlers) Metrics(w http.ResponseWriter, r *http.Request) {
-	metrics, err := h.Repo.Metrics()
+	metrics, err := h.Repo.Metrics(r.Context())
 
 	if err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)

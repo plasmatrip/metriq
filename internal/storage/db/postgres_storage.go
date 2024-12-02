@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/plasmatrip/metriq/internal/logger"
@@ -14,13 +14,13 @@ import (
 )
 
 type PostgresStorage struct {
-	db *sql.DB
+	db *pgxpool.Pool
 	lg logger.Logger
 }
 
-func NewPostgresStorage(dsn string, lg logger.Logger) (*PostgresStorage, error) {
+func NewPostgresStorage(ctx context.Context, dsn string, lg logger.Logger) (*PostgresStorage, error) {
 	// открываем БД
-	db, err := sql.Open("pgx", dsn)
+	db, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func NewPostgresStorage(dsn string, lg logger.Logger) (*PostgresStorage, error) 
 	}
 
 	// создаем таблицу, при ошибке прокидываем ее наверх
-	err = ps.createTables()
+	err = ps.createTables(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,8 @@ func NewPostgresStorage(dsn string, lg logger.Logger) (*PostgresStorage, error) 
 	return ps, nil
 }
 
-func (ps PostgresStorage) createTables() error {
-	_, err := ps.db.Exec(schema)
+func (ps PostgresStorage) createTables(ctx context.Context) error {
+	_, err := ps.db.Exec(ctx, schema)
 	if err != nil {
 		return err
 	}
@@ -48,39 +48,31 @@ func (ps PostgresStorage) createTables() error {
 }
 
 func (ps PostgresStorage) Ping(ctx context.Context) error {
-	// проверяем, что есть коннект с БД
-	return ps.db.PingContext(ctx)
+	return ps.db.Ping(ctx)
 }
 
-func (ps PostgresStorage) Close() error {
-	// закрываем коннект с БД
-	err := ps.db.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+func (ps PostgresStorage) Close() {
+	ps.db.Close()
 }
 
-// func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
 func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metrics) error {
 	// начинаем транзакцию
-	tx, err := ps.db.BeginTx(ctx, nil)
+	tx, err := ps.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
 	if err != nil {
 		return err
 	}
 
 	// при ошибке коммита откатываем назад
 	defer func() error {
-		return tx.Rollback()
+		return tx.Rollback(ctx)
 	}()
 
 	// итерируемся по метрикам
 	for _, metric := range metrics {
-		// for _, metric := range metrics.Metrics {
 		switch metric.MType {
 		case types.Gauge:
 			// пытаемся обновить метрику в БД, при ошибке прокидываем ее наверх
-			_, err := tx.ExecContext(ctx, insertGauge, pgx.NamedArgs{
+			_, err := tx.Exec(ctx, insertGauge, pgx.NamedArgs{
 				"id":    metric.ID,
 				"mType": metric.MType,
 				"value": metric.Value,
@@ -89,7 +81,7 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metri
 				return err
 			}
 			// т.к. пришел тип gauge, увеличиваем PollCounter на 1
-			_, err = tx.ExecContext(ctx, insertCounter, pgx.NamedArgs{
+			_, err = tx.Exec(ctx, insertCounter, pgx.NamedArgs{
 				"id":    types.PollCount,
 				"mType": types.Counter,
 				"delta": 1,
@@ -98,7 +90,7 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metri
 				return err
 			}
 		case types.Counter:
-			_, err := tx.ExecContext(ctx, insertCounter, pgx.NamedArgs{
+			_, err := tx.Exec(ctx, insertCounter, pgx.NamedArgs{
 				"id":    metric.ID,
 				"mType": metric.MType,
 				"delta": metric.Delta,
@@ -110,11 +102,15 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metri
 	}
 
 	// запускаем коммит
-	tx.Commit()
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (ps PostgresStorage) SetMetric(id string, metric types.Metric) error {
+func (ps PostgresStorage) SetMetric(ctx context.Context, id string, metric types.Metric) error {
 	// определяем тип пришедшей метрики
 	switch metric.MetricType {
 	case types.Gauge:
@@ -124,7 +120,7 @@ func (ps PostgresStorage) SetMetric(id string, metric types.Metric) error {
 		}
 
 		// пытаемся обновить метрику в БД, при ошибке прокидываем ее наверх
-		res, err := ps.db.Exec(insertGauge,
+		res, err := ps.db.Exec(ctx, insertGauge,
 			pgx.NamedArgs{
 				"id":    id,
 				"mType": metric.MetricType,
@@ -133,18 +129,18 @@ func (ps PostgresStorage) SetMetric(id string, metric types.Metric) error {
 		if err != nil {
 			return err
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			return errors.New("zero rows inserted")
 		}
 
 		// т.к. пришел тип gauge, увеличиваем PollCounter на 1
-		err = ps.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: 1})
+		err = ps.setCounter(ctx, types.PollCount, types.Metric{MetricType: types.Counter, Value: 1})
 		if err != nil {
 			return err
 		}
 	case types.Counter:
-		err := ps.setCounter(id, metric)
+		err := ps.setCounter(ctx, id, metric)
 		if err != nil {
 			return err
 		}
@@ -153,9 +149,9 @@ func (ps PostgresStorage) SetMetric(id string, metric types.Metric) error {
 	return nil
 }
 
-func (ps PostgresStorage) setCounter(id string, metric types.Metric) error {
+func (ps PostgresStorage) setCounter(ctx context.Context, id string, metric types.Metric) error {
 	// пытаемся обновить метрику в БД, при ошибке прокидываем ее наверх
-	res, err := ps.db.Exec(insertCounter,
+	res, err := ps.db.Exec(ctx, insertCounter,
 		pgx.NamedArgs{
 			"id":    id,
 			"mType": metric.MetricType,
@@ -165,7 +161,7 @@ func (ps PostgresStorage) setCounter(id string, metric types.Metric) error {
 		return err
 	}
 
-	rows, _ := res.RowsAffected()
+	rows := res.RowsAffected()
 	if rows == 0 {
 		return errors.New("zero rows inserted")
 	}
@@ -173,11 +169,11 @@ func (ps PostgresStorage) setCounter(id string, metric types.Metric) error {
 	return nil
 }
 
-func (ps PostgresStorage) Metric(id string) (types.Metric, error) {
+func (ps PostgresStorage) Metric(ctx context.Context, id string) (types.Metric, error) {
 	m := models.Metrics{}
 
 	// делаем запрос в БД
-	row := ps.db.QueryRow("SELECT * FROM metrics WHERE id = @id", pgx.NamedArgs{"id": id})
+	row := ps.db.QueryRow(ctx, "SELECT * FROM metrics WHERE id = @id", pgx.NamedArgs{"id": id})
 
 	// читаем результат в структуру models.Metrics, при ошибке прокидываем ее наверх
 	err := row.Scan(&m.ID, &m.MType, &m.Value, &m.Delta)
@@ -198,12 +194,12 @@ func (ps PostgresStorage) Metric(id string) (types.Metric, error) {
 	return metric, nil
 }
 
-func (ps PostgresStorage) Metrics() (map[string]types.Metric, error) {
+func (ps PostgresStorage) Metrics(ctx context.Context) (map[string]types.Metric, error) {
 	// создаем мапу для записи результата
 	metrics := make(map[string]types.Metric, 0)
 
 	// делаем запрос в БД
-	rows, err := ps.db.Query("SELECT * FROM metrics")
+	rows, err := ps.db.Query(ctx, "SELECT * FROM metrics")
 
 	// при ошибке прокидываем ее наверх
 	if err != nil {

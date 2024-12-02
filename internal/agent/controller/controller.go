@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"math/rand/v2"
@@ -28,13 +29,11 @@ func NewController(repo storage.Repository, config config.Config) *Controller {
 }
 
 func (c Controller) SendMetricsBatch() error {
-	metrics, err := c.Repo.Metrics()
+	metrics, err := c.Repo.Metrics(context.Background())
 	if err != nil {
 		return err
 	}
 
-	// sMetrics := models.SMetrics{}
-	// sMetrics := []models.Metrics{}
 	sMetrics := make([]models.Metrics, 0, len(metrics))
 	for mName, metric := range metrics {
 		sMetrics = append(sMetrics, metric.Convert(mName))
@@ -77,7 +76,7 @@ func (c Controller) SendMetricsBatch() error {
 }
 
 func (c Controller) SendMetrics() error {
-	metrics, err := c.Repo.Metrics()
+	metrics, err := c.Repo.Metrics(context.Background())
 	if err != nil {
 		return err
 	}
@@ -111,36 +110,36 @@ func (c Controller) SendMetrics() error {
 	return nil
 }
 
-func (c Controller) UpdateMetrics() {
+func (c Controller) UpdateMetrics(ctx context.Context) {
 	var rtm runtime.MemStats
 	runtime.ReadMemStats(&rtm)
 
-	c.Repo.SetMetric("Alloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Alloc)})
-	c.Repo.SetMetric("TotalAlloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.TotalAlloc)})
-	c.Repo.SetMetric("Sys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Sys)})
-	c.Repo.SetMetric("Lookups", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Lookups)})
-	c.Repo.SetMetric("Mallocs", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Mallocs)})
-	c.Repo.SetMetric("Frees", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Frees)})
-	c.Repo.SetMetric("HeapAlloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapAlloc)})
-	c.Repo.SetMetric("HeapSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapSys)})
-	c.Repo.SetMetric("HeapIdle", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapIdle)})
-	c.Repo.SetMetric("HeapInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapInuse)})
-	c.Repo.SetMetric("HeapReleased", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapReleased)})
-	c.Repo.SetMetric("HeapObjects", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapObjects)})
-	c.Repo.SetMetric("StackInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.StackInuse)})
-	c.Repo.SetMetric("StackSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.StackSys)})
-	c.Repo.SetMetric("MSpanInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MSpanInuse)})
-	c.Repo.SetMetric("MSpanSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MSpanSys)})
-	c.Repo.SetMetric("MCacheInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MCacheInuse)})
-	c.Repo.SetMetric("MCacheSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MCacheSys)})
-	c.Repo.SetMetric("BuckHashSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.BuckHashSys)})
-	c.Repo.SetMetric("GCSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.GCSys)})
-	c.Repo.SetMetric("OtherSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.OtherSys)})
-	c.Repo.SetMetric("NextGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NextGC)})
-	c.Repo.SetMetric("LastGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.LastGC)})
-	c.Repo.SetMetric("PauseTotalNs", types.Metric{MetricType: types.Gauge, Value: float64(rtm.PauseTotalNs)})
-	c.Repo.SetMetric("NumGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NumGC)})
-	c.Repo.SetMetric("NumForcedGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NumForcedGC)})
-	c.Repo.SetMetric("GCCPUFraction", types.Metric{MetricType: types.Gauge, Value: rtm.GCCPUFraction})
-	c.Repo.SetMetric("RandomValue", types.Metric{MetricType: types.Gauge, Value: rand.Float64()})
+	c.Repo.SetMetric(ctx, "Alloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Alloc)})
+	c.Repo.SetMetric(ctx, "TotalAlloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.TotalAlloc)})
+	c.Repo.SetMetric(ctx, "Sys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Sys)})
+	c.Repo.SetMetric(ctx, "Lookups", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Lookups)})
+	c.Repo.SetMetric(ctx, "Mallocs", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Mallocs)})
+	c.Repo.SetMetric(ctx, "Frees", types.Metric{MetricType: types.Gauge, Value: float64(rtm.Frees)})
+	c.Repo.SetMetric(ctx, "HeapAlloc", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapAlloc)})
+	c.Repo.SetMetric(ctx, "HeapSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapSys)})
+	c.Repo.SetMetric(ctx, "HeapIdle", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapIdle)})
+	c.Repo.SetMetric(ctx, "HeapInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapInuse)})
+	c.Repo.SetMetric(ctx, "HeapReleased", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapReleased)})
+	c.Repo.SetMetric(ctx, "HeapObjects", types.Metric{MetricType: types.Gauge, Value: float64(rtm.HeapObjects)})
+	c.Repo.SetMetric(ctx, "StackInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.StackInuse)})
+	c.Repo.SetMetric(ctx, "StackSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.StackSys)})
+	c.Repo.SetMetric(ctx, "MSpanInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MSpanInuse)})
+	c.Repo.SetMetric(ctx, "MSpanSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MSpanSys)})
+	c.Repo.SetMetric(ctx, "MCacheInuse", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MCacheInuse)})
+	c.Repo.SetMetric(ctx, "MCacheSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.MCacheSys)})
+	c.Repo.SetMetric(ctx, "BuckHashSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.BuckHashSys)})
+	c.Repo.SetMetric(ctx, "GCSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.GCSys)})
+	c.Repo.SetMetric(ctx, "OtherSys", types.Metric{MetricType: types.Gauge, Value: float64(rtm.OtherSys)})
+	c.Repo.SetMetric(ctx, "NextGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NextGC)})
+	c.Repo.SetMetric(ctx, "LastGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.LastGC)})
+	c.Repo.SetMetric(ctx, "PauseTotalNs", types.Metric{MetricType: types.Gauge, Value: float64(rtm.PauseTotalNs)})
+	c.Repo.SetMetric(ctx, "NumGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NumGC)})
+	c.Repo.SetMetric(ctx, "NumForcedGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NumForcedGC)})
+	c.Repo.SetMetric(ctx, "GCCPUFraction", types.Metric{MetricType: types.Gauge, Value: rtm.GCCPUFraction})
+	c.Repo.SetMetric(ctx, "RandomValue", types.Metric{MetricType: types.Gauge, Value: rand.Float64()})
 }

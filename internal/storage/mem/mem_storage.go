@@ -1,4 +1,4 @@
-package storage
+package mem
 
 import (
 	"context"
@@ -35,21 +35,19 @@ func (ms *MemStorage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (ms *MemStorage) Close() error {
-	return nil
+func (ms *MemStorage) Close() {
 }
+
 func (ms *MemStorage) SetMetrics(ctx context.Context, metrics []models.Metrics) error {
-	// func (ms *MemStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
 	for _, metric := range metrics {
-		// for _, metric := range metrics.Metrics {
 		switch metric.MType {
 		case types.Gauge:
-			err := ms.SetMetric(metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Value})
+			err := ms.SetMetric(ctx, metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Value})
 			if err != nil {
 				return err
 			}
 		case types.Counter:
-			err := ms.SetMetric(metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Delta})
+			err := ms.SetMetric(ctx, metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Delta})
 			if err != nil {
 				return err
 			}
@@ -59,7 +57,7 @@ func (ms *MemStorage) SetMetrics(ctx context.Context, metrics []models.Metrics) 
 	return nil
 }
 
-func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
+func (ms *MemStorage) SetMetric(ctx context.Context, mName string, metric types.Metric) error {
 	ms.Mu.Lock()
 	switch metric.MetricType {
 	case types.Gauge:
@@ -68,13 +66,13 @@ func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 			return err
 		}
 		ms.Storage[mName] = metric
-		err := ms.setCounter(types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
+		err := ms.setCounter(ctx, types.PollCount, types.Metric{MetricType: types.Counter, Value: int64(1)})
 		if err != nil {
 			ms.Mu.Unlock()
 			return err
 		}
 	case types.Counter:
-		err := ms.setCounter(mName, metric)
+		err := ms.setCounter(ctx, mName, metric)
 		if err != nil {
 			ms.Mu.Unlock()
 			return err
@@ -90,7 +88,7 @@ func (ms *MemStorage) SetMetric(mName string, metric types.Metric) error {
 	return nil
 }
 
-func (ms *MemStorage) setCounter(mName string, metric types.Metric) error {
+func (ms *MemStorage) setCounter(ctx context.Context, mName string, metric types.Metric) error {
 	if oldMetric, ok := ms.Storage[mName]; ok {
 		oldValue, ok := oldMetric.Value.(int64)
 		if !ok {
@@ -112,7 +110,7 @@ func (ms *MemStorage) SetBackup(c chan struct{}) {
 	ms.bkp.c = c
 }
 
-func (ms *MemStorage) Metric(key string) (types.Metric, error) {
+func (ms *MemStorage) Metric(ctx context.Context, key string) (types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	metric, ok := ms.Storage[key]
@@ -122,7 +120,7 @@ func (ms *MemStorage) Metric(key string) (types.Metric, error) {
 	return metric, nil
 }
 
-func (ms *MemStorage) Metrics() (map[string]types.Metric, error) {
+func (ms *MemStorage) Metrics(ctx context.Context) (map[string]types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))

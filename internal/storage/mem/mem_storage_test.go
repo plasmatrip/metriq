@@ -1,6 +1,7 @@
-package storage
+package mem
 
 import (
+	"context"
 	"testing"
 
 	"github.com/plasmatrip/metriq/internal/types"
@@ -49,14 +50,15 @@ func TestMemStorage_Update(t *testing.T) {
 			metricType: types.Gauge,
 		},
 	}
+	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var err error
 			switch test.metricType {
 			case types.Counter:
-				err = storage.SetMetric(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
+				err = storage.SetMetric(ctx, test.key, types.Metric{MetricType: test.metricType, Value: test.value})
 			case types.Gauge:
-				err = storage.SetMetric(test.key, types.Metric{MetricType: test.metricType, Value: test.value})
+				err = storage.SetMetric(ctx, test.key, types.Metric{MetricType: test.metricType, Value: test.value})
 			}
 			if test.errWant {
 				assert.Error(t, err)
@@ -114,15 +116,16 @@ func TestMemStorage_Get(t *testing.T) {
 			metricType: types.Gauge,
 		},
 	}
+	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			switch test.metricType {
 			case types.Counter:
-				_ = storage.SetMetric(test.key, test.metric)
+				_ = storage.SetMetric(ctx, test.key, test.metric)
 			case types.Gauge:
-				_ = storage.SetMetric(test.key, test.metric)
+				_ = storage.SetMetric(ctx, test.key, test.metric)
 			}
-			_, err := storage.Metric(test.getKey)
+			_, err := storage.Metric(ctx, test.getKey)
 			if test.errWant {
 				assert.Error(t, err)
 				return
@@ -133,12 +136,13 @@ func TestMemStorage_Get(t *testing.T) {
 }
 
 func TestMemStorage_Metrics(t *testing.T) {
+	ctx := context.Background()
 	storage := NewStorage()
-	storage.SetMetric("metric", types.Metric{MetricType: types.Gauge, Value: float64(100)})
-	storage.SetMetric("counter", types.Metric{MetricType: types.Counter, Value: int64(100)})
+	storage.SetMetric(ctx, "metric", types.Metric{MetricType: types.Gauge, Value: float64(100)})
+	storage.SetMetric(ctx, "counter", types.Metric{MetricType: types.Counter, Value: int64(100)})
 
 	t.Run("Get all metrics", func(t *testing.T) {
-		metrics, err := storage.Metrics()
+		metrics, err := storage.Metrics(ctx)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, metrics)
 		assert.Len(t, metrics, 3)

@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -78,7 +79,7 @@ func (bkp Backup) Save() error {
 
 	encoder := json.NewEncoder(file)
 
-	metrics, err := bkp.stor.Metrics()
+	metrics, err := bkp.stor.Metrics(context.Background())
 
 	if err != nil {
 		return err
@@ -122,7 +123,7 @@ func (bkp Backup) load() error {
 
 		bkp.lg.Sugar.Infow("load value", "value", value, "type", jMetric.MType, "name", jMetric.ID)
 
-		if err := bkp.stor.SetMetric(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+		if err := bkp.stor.SetMetric(context.Background(), jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
 			return err
 		}
 	}

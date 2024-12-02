@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -8,15 +9,17 @@ import (
 
 	"github.com/plasmatrip/metriq/internal/agent/config"
 	"github.com/plasmatrip/metriq/internal/agent/controller"
-	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
 func main() {
+	ctx := context.Background()
+
 	config, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
-	controller := controller.NewController(storage.NewStorage(), *config)
+	controller := controller.NewController(mem.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -24,7 +27,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			controller.UpdateMetrics()
+			controller.UpdateMetrics(ctx)
 			time.Sleep(time.Duration(config.PollInterval) * time.Second)
 		}
 	}()
