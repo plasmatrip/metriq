@@ -6,72 +6,86 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/caarlos0/env/v6"
 )
 
 const (
-	port           = "8080"
-	host           = "localhost"
-	pollInterval   = 2
-	reportInterval = 10
+	port               = "8080"
+	host               = "localhost"
+	pollInterval       = 2
+	reportInterval     = 10
+	clientTimeout      = time.Second * 5
+	retryInterval      = time.Second * 2
+	startRetryInterval = time.Second * 1
+	maxRetries         = 3
 )
 
 type Config struct {
-	Host           string `env:"ADDRESS"`
-	PollInterval   int    `env:"POLL_INTERVAL"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
+	Host               string        `env:"ADDRESS"`         // адрес сервера
+	PollInterval       int           `env:"POLL_INTERVAL"`   // интервал в сек обновления метрик
+	ReportInterval     int           `env:"REPORT_INTERVAL"` // интервал в сек отправки метрик на сервер
+	ClientTimeout      time.Duration // таймаут для http клиента
+	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторной отправки метрик на сервер
+	StartRetryInterval time.Duration // начиниаем повторную отправку через сек
+	MaxRetries         int           // максимальное количество попыток повторной отправки метрик на сервер
 }
 
 func NewConfig() (*Config, error) {
-	config := new(Config)
+	cfg := &Config{
+		ClientTimeout:      clientTimeout,
+		RetryInterval:      retryInterval,
+		StartRetryInterval: startRetryInterval,
+		MaxRetries:         maxRetries,
+	}
 
 	// читаем переменную окружения, при ошибке прокидываем ее наверх
-	if err := env.Parse(config); err != nil {
+	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
 	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
-	if len(config.Host) != 0 {
-		if err := parseAddress(config); err != nil {
+	if len(cfg.Host) != 0 {
+		if err := parseAddress(cfg); err != nil {
 			return nil, fmt.Errorf("port parsing error: %w", err)
 		}
 
-		if config.PollInterval <= 0 {
-			config.PollInterval = pollInterval
+		if cfg.PollInterval <= 0 {
+			cfg.PollInterval = pollInterval
 		}
 
-		if config.ReportInterval <= 0 {
-			config.ReportInterval = reportInterval
+		if cfg.ReportInterval <= 0 {
+			cfg.ReportInterval = reportInterval
 		}
 
-		return config, nil
+		return cfg, nil
 	}
 
 	// проверяем флаги
 	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	cl.StringVar(&config.Host, "a", host+":"+port, "Server address host:port")
-	cl.IntVar(&config.PollInterval, "p", pollInterval, "metrics reporting interval")
-	cl.IntVar(&config.ReportInterval, "r", reportInterval, "metrics polling frequency")
+	cl.StringVar(&cfg.Host, "a", host+":"+port, "Server address host:port")
+	cl.IntVar(&cfg.PollInterval, "p", pollInterval, "metrics reporting interval")
+	cl.IntVar(&cfg.ReportInterval, "r", reportInterval, "metrics polling frequency")
 
 	// при ошибке парсинга прокидываем ошибку наверх
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	if err := parseAddress(config); err != nil {
+	if err := parseAddress(cfg); err != nil {
 		return nil, fmt.Errorf("port parsing error: %w", err)
 	}
 
-	if config.PollInterval <= 0 {
-		config.PollInterval = pollInterval
+	if cfg.PollInterval <= 0 {
+		cfg.PollInterval = pollInterval
 	}
 
-	if config.ReportInterval <= 0 {
-		config.ReportInterval = reportInterval
+	if cfg.ReportInterval <= 0 {
+		cfg.ReportInterval = reportInterval
 	}
 
-	return config, nil
+	return cfg, nil
 }
 
 func parseAddress(config *Config) error {

@@ -3,9 +3,11 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"math/rand/v2"
 	"net/http"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/plasmatrip/metriq/internal/agent/compress"
@@ -22,7 +24,7 @@ type Controller struct {
 }
 
 func NewController(repo storage.Repository, config config.Config) *Controller {
-	return &Controller{Repo: repo, Client: http.Client{Timeout: time.Second * 5}, config: config}
+	return &Controller{Repo: repo, Client: http.Client{Timeout: config.ClientTimeout}, config: config}
 }
 
 func (c Controller) SendMetricsBatch() error {
@@ -55,13 +57,22 @@ func (c Controller) SendMetricsBatch() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "application/gzip")
 
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return err
+	retryCount := 0
+	wait := c.config.StartRetryInterval
+	for {
+		resp, err := c.Client.Do(req)
+		if errors.Is(err, syscall.ECONNREFUSED) && retryCount < c.config.MaxRetries {
+			time.Sleep(wait)
+			retryCount++
+			wait += c.config.RetryInterval
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		return nil
 	}
-	defer resp.Body.Close()
-
-	return nil
 }
 
 func (c Controller) SendMetrics() error {

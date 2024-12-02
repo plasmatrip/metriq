@@ -31,10 +31,13 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		for {
+
 			if err := controller.SendMetricsBatch(); err != nil {
 				fmt.Println("Error: ", err)
 			}
+
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
 	}()

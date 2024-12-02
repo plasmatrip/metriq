@@ -6,28 +6,39 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/caarlos0/env"
 )
 
 const (
-	port            = "8080"
-	host            = "localhost"
-	storeinterval   = 300
-	fileStoragePath = "backup.dat"
-	restore         = true
+	port               = "8080"
+	host               = "localhost"
+	storeinterval      = 300
+	fileStoragePath    = "backup.dat"
+	restore            = true
+	retryInterval      = time.Second * 2
+	startRetryInterval = time.Second * 1
+	maxRetries         = 3
 )
 
 type Config struct {
-	Host            string `env:"ADDRESS"`
-	StoreInterval   int    `env:"STORE_INTERVAL"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
-	Restore         bool   `env:"RESTORE"`
-	DSN             string `env:"DATABASE_DSN"`
+	Host               string        `env:"ADDRESS"`
+	StoreInterval      int           `env:"STORE_INTERVAL"`
+	FileStoragePath    string        `env:"FILE_STORAGE_PATH"`
+	Restore            bool          `env:"RESTORE"`
+	DSN                string        `env:"DATABASE_DSN"`
+	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторного коннекта с бд
+	StartRetryInterval time.Duration // начиниаем повторную попытку коннекта с бд через сек
+	MaxRetries         int           // максимальное количество попыток повторного коннекта с бд
 }
 
 func NewConfig() (*Config, error) {
-	cfg := new(Config)
+	cfg := &Config{
+		RetryInterval:      retryInterval,
+		StartRetryInterval: startRetryInterval,
+		MaxRetries:         maxRetries,
+	}
 
 	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
@@ -35,27 +46,6 @@ func NewConfig() (*Config, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
-
-	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
-	// if _, exist := os.LookupEnv("ADDRESS"); !exist {
-	// 	cl.StringVar(&cfg.Host, "a", host+":"+port, "Server address host:port")
-	// }
-
-	// if _, exist := os.LookupEnv("STORE_INTERVAL"); !exist {
-	// 	cl.IntVar(&cfg.StoreInterval, "i", storeinterval, "Time interval in seconds for saving the metrics to a file")
-	// }
-
-	// if _, exist := os.LookupEnv("FILE_STORAGE_PATH"); !exist {
-	// 	cl.StringVar(&cfg.FileStoragePath, "f", fileStoragePath, "Path to the file where metrics are saved")
-	// }
-
-	// if _, exist := os.LookupEnv("RESTORE"); !exist {
-	// 	cl.BoolVar(&cfg.Restore, "r", restore, "Whether to load saved metrics from a file or not")
-	// }
-
-	// if _, exist := os.LookupEnv("DATABASE_DSN"); !exist {
-	// 	cl.StringVar(&cfg.DSN, "d", "", "Data source name to connect to the database")
-	// }
 
 	var fHost string
 	cl.StringVar(&fHost, "a", host+":"+port, "Server address host:port")
