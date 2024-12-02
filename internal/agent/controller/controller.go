@@ -33,13 +33,14 @@ func (c Controller) SendMetricsBatch() error {
 		return err
 	}
 
-	sMetrics := models.SMetrics{}
-	sMetrics.Metrics = make([]models.Metrics, 0, len(metrics))
+	// sMetrics := models.SMetrics{}
+	// sMetrics := []models.Metrics{}
+	sMetrics := make([]models.Metrics, 0, len(metrics))
 	for mName, metric := range metrics {
-		sMetrics.Metrics = append(sMetrics.Metrics, metric.Convert(mName))
+		sMetrics = append(sMetrics, metric.Convert(mName))
 	}
 
-	data, err := json.Marshal(sMetrics.Metrics)
+	data, err := json.Marshal(sMetrics)
 	if err != nil {
 		return err
 	}

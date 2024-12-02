@@ -8,7 +8,8 @@ import (
 )
 
 type Repository interface {
-	SetMetrics(context.Context, models.SMetrics) error
+	SetMetrics(context.Context, []models.Metrics) error
+	// SetMetrics(context.Context, models.SMetrics) error
 	SetMetric(mName string, metric types.Metric) error
 	Metric(mName string) (types.Metric, error)
 	Metrics() (map[string]types.Metric, error)

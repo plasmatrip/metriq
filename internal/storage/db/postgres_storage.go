@@ -61,7 +61,8 @@ func (ps PostgresStorage) Close() error {
 	return nil
 }
 
-func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
+// func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
+func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metrics) error {
 	// начинаем транзакцию
 	tx, err := ps.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -74,7 +75,8 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics models.SMetric
 	}()
 
 	// итерируемся по метрикам
-	for _, metric := range metrics.Metrics {
+	for _, metric := range metrics {
+		// for _, metric := range metrics.Metrics {
 		switch metric.MType {
 		case types.Gauge:
 			// пытаемся обновить метрику в БД, при ошибке прокидываем ее наверх

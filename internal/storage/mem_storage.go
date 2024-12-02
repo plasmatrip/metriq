@@ -38,8 +38,10 @@ func (ms *MemStorage) Ping(ctx context.Context) error {
 func (ms *MemStorage) Close() error {
 	return nil
 }
-func (ms *MemStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
-	for _, metric := range metrics.Metrics {
+func (ms *MemStorage) SetMetrics(ctx context.Context, metrics []models.Metrics) error {
+	// func (ms *MemStorage) SetMetrics(ctx context.Context, metrics models.SMetrics) error {
+	for _, metric := range metrics {
+		// for _, metric := range metrics.Metrics {
 		switch metric.MType {
 		case types.Gauge:
 			err := ms.SetMetric(metric.ID, types.Metric{MetricType: metric.MType, Value: *metric.Value})

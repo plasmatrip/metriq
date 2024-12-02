@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/types"
 )
@@ -33,7 +35,8 @@ func (h *Handlers) JSONValue(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := h.Repo.Metric(jMetric.ID)
 	if err != nil {
-		h.lg.Sugar.Infow("error in request handler", "error: ", "metric not found")
+		fmt.Println(pgerrcode.IsConnectionException(err.Error()))
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, "metric not found", http.StatusNotFound)
 		return
 	}
