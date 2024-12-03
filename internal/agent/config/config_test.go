@@ -1,4 +1,4 @@
-package agent
+package config
 
 import (
 	"os"
@@ -60,19 +60,19 @@ func TestConfig_NewConfig_env(t *testing.T) {
 		{
 			name:    "Valid config",
 			env:     map[string]string{"ADDRESS": "server.com:8585", "POLL_INTERVAL": "2", "REPORT_INTERVAL": "10"},
-			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			env:     map[string]string{"ADDRESS": "server.com:8585", "POLL_INTERVAL": "5", "REPORT_INTERVAL": "10"},
-			want:    Config{Host: "server.com:8585", PollInterval: 5, ReportInterval: 10},
+			want:    Config{Host: "server.com:8585", PollInterval: 5, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			env:     map[string]string{"ADDRESS": "server.com:8585", "POLL_INTERVAL": "2", "REPORT_INTERVAL": "15"},
-			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 15},
+			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 15, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
@@ -123,61 +123,61 @@ func TestConfig_NewConfig_Flags(t *testing.T) {
 		{
 			name:    "Valid config",
 			args:    []string{},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			args:    []string{"-a", "server.com:8585"},
-			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			args:    []string{"-p", "2"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			args:    []string{"-r", "10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			args:    []string{"-a", "server.com:8585", "-p", "2"},
-			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Valid config",
 			args:    []string{"-a", "server.com:8585", "-p", "2", "-r", "10"},
-			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "server.com:8585", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Empty port",
 			args:    []string{"-a", "server.com:", "-p", "2", "-r", "10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Empty host name",
 			args:    []string{"-a", ":8585", "-p", "2", "-r", "10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Empty address",
 			args:    []string{"-a", "", "-p", "2", "-r", "10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Only colon",
 			args:    []string{"-a", ":", "-p", "2", "-r", "10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
@@ -195,13 +195,13 @@ func TestConfig_NewConfig_Flags(t *testing.T) {
 		{
 			name:    "Negative poll interval",
 			args:    []string{"-p", "-2"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{
 			name:    "Negative report interval",
 			args:    []string{"-r", "-10"},
-			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10},
+			want:    Config{Host: "localhost:8080", PollInterval: 2, ReportInterval: 10, ClientTimeout: 5000000000, StartRetryInterval: 1000000000, RetryInterval: 2000000000, MaxRetries: 3},
 			errWant: false,
 		},
 		{

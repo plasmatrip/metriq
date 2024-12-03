@@ -7,7 +7,7 @@ import (
 
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/server/config"
-	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/storage/mem"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,9 +62,9 @@ func TestUpdateHandlers(t *testing.T) {
 			},
 		},
 	}
-	h := NewHandlers(storage.NewStorage(), config.Config{}, logger.Logger{})
+	h := NewHandlers(mem.NewStorage(), config.Config{}, logger.Logger{})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
+	mux.HandleFunc("/update/{metricType}/{metricName}/{metricValue}", h.Update)
 	serv := httptest.NewServer(mux)
 	defer serv.Close()
 

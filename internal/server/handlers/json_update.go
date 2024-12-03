@@ -8,27 +8,25 @@ import (
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
-func (h *Handlers) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) JSONUpdate(w http.ResponseWriter, r *http.Request) {
 	var jMetric models.Metrics
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
-
 	if err := json.NewDecoder(r.Body).Decode(&jMetric); err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//проверяем тип метрики
 	if err := types.CheckMetricType(jMetric.MType); err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//проверяем имя метрики
 	if len(jMetric.ID) == 0 {
+		h.lg.Sugar.Infow("error in request handler", "error: ", "the name of the metric is empty")
 		http.Error(w, "the name of the metric is empty", http.StatusNotFound)
 		return
 	}
@@ -41,14 +39,16 @@ func (h *Handlers) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		value = *jMetric.Value
 	}
 
-	if err := h.Repo.SetMetric(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+	if err := h.Repo.SetMetric(r.Context(), jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	metric, ok := h.Repo.Metric(jMetric.ID)
-	if !ok {
-		http.Error(w, "Metric not found", http.StatusNotFound)
+	metric, err := h.Repo.Metric(r.Context(), jMetric.ID)
+	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", "metric not found")
+		http.Error(w, "metric not found", http.StatusNotFound)
 		return
 	}
 
@@ -56,6 +56,7 @@ func (h *Handlers) JSONUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(jMetric)
 	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

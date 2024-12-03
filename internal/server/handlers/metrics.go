@@ -5,13 +5,14 @@ import (
 	"net/http"
 )
 
-func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+func (h *Handlers) Metrics(w http.ResponseWriter, r *http.Request) {
+	metrics, err := h.Repo.Metrics(r.Context())
+
+	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	metrics := h.Repo.Metrics()
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>
@@ -28,7 +29,7 @@ func (h *Handlers) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte(html))
+	_, err = w.Write([]byte(html))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-func checkType(mType string) bool {
-	return strings.ToLower(mType) == Gauge || strings.ToLower(mType) == Counter
-}
-
 func CheckValue(mType, mValue string) (any, error) {
 	switch mType {
 	case Gauge:
@@ -22,8 +18,8 @@ func CheckValue(mType, mValue string) (any, error) {
 	return nil, errors.New("undefined metric type")
 }
 
-func CheckMetricType(metricType string) error {
-	if len(metricType) == 0 || !checkType(metricType) {
+func CheckMetricType(mType string) error {
+	if len(mType) == 0 || (strings.ToLower(mType) != Gauge && strings.ToLower(mType) != Counter) {
 		return errors.New(`the type of the metric is not defined`)
 	}
 	return nil

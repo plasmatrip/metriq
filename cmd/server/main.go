@@ -11,6 +11,8 @@ import (
 	"github.com/plasmatrip/metriq/internal/server/config"
 	"github.com/plasmatrip/metriq/internal/server/routing"
 	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/storage/db"
+	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
 func main() {
@@ -28,18 +30,31 @@ func main() {
 	}
 	defer l.Close()
 
-	s := storage.NewStorage()
+	var s storage.Repository
+	if c.DSN == "" {
+		s = mem.NewStorage()
+	} else {
+		s, err = db.NewPostgresStorage(ctx, c.DSN, *l)
+		if err != nil {
+			l.Sugar.Infow("database connection error: ", err)
+			os.Exit(1)
+		}
+		defer s.Close()
+	}
 
 	backup, err := backup.NewBackup(*c, s, l)
 	if err != nil {
 		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
 	}
-	backup.Start()
+	if c.DSN == "" {
+		backup.Start()
+	}
 
 	server := http.Server{
 		Addr: c.Host,
 		Handler: func(next http.Handler) http.Handler {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
+			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN)
 			return next
 		}(routing.NewRouter(s, *c, l)),
 	}

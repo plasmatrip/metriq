@@ -18,14 +18,20 @@ func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux
 	r.Use(l.WithLogging)
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/", h.JSONUpdateHandler)
+		r.Post("/", h.JSONUpdate)
 	})
-	r.Post("/update/{metricType}/{metricName}/{metricValue}", h.UpdateHandler)
+	r.Route("/updates", func(r chi.Router) {
+		r.Post("/", h.JSONUpdates)
+	})
 	r.Route("/value", func(r chi.Router) {
-		r.Post("/", h.JSONValueHandler)
+		r.Post("/", h.JSONValue)
 	})
-	r.Get("/value/{metricType}/{metricName}", h.ValueHandler)
-	r.Get("/", h.MetricsHandler)
+	r.Post("/update/{metricType}/{metricName}/{metricValue}", h.Update)
+	r.Get("/value/{metricType}/{metricName}", h.Value)
+	r.Get("/", h.Metrics)
+	r.Route("/ping", func(r chi.Router) {
+		r.Get("/", h.Ping)
+	})
 
 	return r
 }

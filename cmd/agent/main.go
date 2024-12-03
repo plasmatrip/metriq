@@ -1,20 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/plasmatrip/metriq/internal/agent"
-	"github.com/plasmatrip/metriq/internal/storage"
+	"github.com/plasmatrip/metriq/internal/agent/config"
+	"github.com/plasmatrip/metriq/internal/agent/controller"
+	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
 func main() {
-	config, err := agent.NewConfig()
+	ctx := context.Background()
+
+	config, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
-	controller := agent.NewController(storage.NewStorage(), *config)
+	controller := controller.NewController(mem.NewStorage(), *config)
 
 	var wg sync.WaitGroup
 
@@ -22,17 +27,20 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for {
-			controller.UpdateMetrics()
+			controller.UpdateMetrics(ctx)
 			time.Sleep(time.Duration(config.PollInterval) * time.Second)
 		}
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		for {
-			if err := controller.SendMetrics(); err != nil {
+
+			if err := controller.SendMetricsBatch(); err != nil {
 				fmt.Println("Error: ", err)
 			}
+
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
 	}()
@@ -43,4 +51,6 @@ Server address: %s
 `, config.PollInterval, config.ReportInterval, config.Host)
 
 	wg.Wait()
+
+	os.Exit(0)
 }

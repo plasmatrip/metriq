@@ -7,12 +7,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/types"
 )
 
-func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
-
+func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 	//проверяем тип метрики
 	mType := r.PathValue("metricType")
 	if err := types.CheckMetricType(mType); err != nil {
@@ -36,7 +31,7 @@ func (h *Handlers) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Repo.SetMetric(mName, types.Metric{MetricType: mType, Value: value}); err != nil {
+	if err := h.Repo.SetMetric(r.Context(), mName, types.Metric{MetricType: mType, Value: value}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

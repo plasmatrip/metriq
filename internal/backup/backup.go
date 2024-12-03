@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -41,23 +42,23 @@ func (bkp Backup) Start() {
 			bkp.lg.Sugar.Fatalw("error loading from backup: ", err)
 		}
 	}
-	bkp.load()
 
 	if bkp.cfg.StoreInterval == 0 {
 		go func() {
-			c := make(chan bool)
+			c := make(chan struct{})
 			defer close(c)
 
 			bkp.stor.SetBackup(c)
-			for {
-				if <-c {
-					bkp.Save()
-				}
+			select {
+			case <-c:
+				bkp.Save()
+			default:
 			}
 		}()
 	} else {
-		ticker := time.NewTicker(time.Duration(bkp.cfg.StoreInterval) * time.Second)
 		go func() {
+			ticker := time.NewTicker(time.Duration(bkp.cfg.StoreInterval) * time.Second)
+			defer ticker.Stop()
 			for range ticker.C {
 				err := bkp.Save()
 				if err != nil {
@@ -78,7 +79,13 @@ func (bkp Backup) Save() error {
 
 	encoder := json.NewEncoder(file)
 
-	for mName, metric := range bkp.stor.Metrics() {
+	metrics, err := bkp.stor.Metrics(context.Background())
+
+	if err != nil {
+		return err
+	}
+
+	for mName, metric := range metrics {
 		err := encoder.Encode(metric.Convert(mName))
 		if err != nil {
 			return err
@@ -114,7 +121,9 @@ func (bkp Backup) load() error {
 			value = *jMetric.Value
 		}
 
-		if err := bkp.stor.SetMetric(jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+		bkp.lg.Sugar.Infow("load value", "value", value, "type", jMetric.MType, "name", jMetric.ID)
+
+		if err := bkp.stor.SetMetric(context.Background(), jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
 			return err
 		}
 	}
