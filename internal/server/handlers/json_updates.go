@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/plasmatrip/metriq/internal/models"
@@ -40,6 +41,14 @@ func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp, err := json.Marshal(fmt.Sprintf("%d metrics received", len(jMetrics)))
+	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 }

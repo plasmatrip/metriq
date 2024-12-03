@@ -30,6 +30,10 @@ func NewController(repo storage.Repository, config config.Config) *Controller {
 
 func (c Controller) SendMetricsBatch() error {
 	metrics, err := c.Repo.Metrics(context.Background())
+	if len(metrics) == 0 {
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
