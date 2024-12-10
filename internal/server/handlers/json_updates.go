@@ -48,8 +48,6 @@ func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
 	// если есть ключ, хэшируем ответ
 	if len(h.config.Key) > 0 {
 		hash, err := h.Sum(resp)
@@ -62,6 +60,7 @@ func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HashSHA256", hash)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }

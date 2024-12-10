@@ -14,7 +14,11 @@ func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux
 
 	r := chi.NewRouter()
 
-	r.Use(h.WithHashing, compress.WithCompressed, l.WithLogging)
+	if c.Key != "" {
+		r.Use(h.WithHashing)
+	}
+
+	r.Use(compress.WithCompressed, l.WithLogging)
 
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", h.JSONUpdate)

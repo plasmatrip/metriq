@@ -46,6 +46,19 @@ func (h *Handlers) JSONValue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// если есть ключ, хэшируем ответ
+	if len(h.config.Key) > 0 {
+		hash, err := h.Sum(resp)
+		if err != nil {
+			h.lg.Sugar.Infow("error in request handler", "error: ", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("HashSHA256", hash)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
