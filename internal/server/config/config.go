@@ -28,6 +28,7 @@ type Config struct {
 	FileStoragePath    string        `env:"FILE_STORAGE_PATH"`
 	Restore            bool          `env:"RESTORE"`
 	DSN                string        `env:"DATABASE_DSN"`
+	Key                string        `env:"KEY"` // ключ для вычисления хэша по SHA256
 	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторного коннекта с бд
 	StartRetryInterval time.Duration // начиниаем повторную попытку коннекта с бд через сек
 	MaxRetries         int           // максимальное количество попыток повторного коннекта с бд
@@ -48,25 +49,27 @@ func NewConfig() (*Config, error) {
 	}
 
 	var fHost string
-	cl.StringVar(&fHost, "a", host+":"+port, "Server address host:port")
+	cl.StringVar(&fHost, "a", host+":"+port, "server address host:port")
 
 	var fStoreInterval int
-	cl.IntVar(&fStoreInterval, "i", storeinterval, "Time interval in seconds for saving the metrics to a file")
+	cl.IntVar(&fStoreInterval, "i", storeinterval, "time interval in seconds for saving the metrics to a file")
 
 	var fFileStoragePath string
-	cl.StringVar(&fFileStoragePath, "f", fileStoragePath, "Path to the file where metrics are saved")
+	cl.StringVar(&fFileStoragePath, "f", fileStoragePath, "path to the file where metrics are saved")
 
 	var fRestore bool
-	cl.BoolVar(&fRestore, "r", restore, "Whether to load saved metrics from a file or not")
+	cl.BoolVar(&fRestore, "r", restore, "whether to load saved metrics from a file or not")
 
 	var fDSN string
-	cl.StringVar(&fDSN, "d", "", "Data source name to connect to the database")
+	cl.StringVar(&fDSN, "d", "", "data source name to connect to the database")
+
+	var fKey string
+	cl.StringVar(&fKey, "k", "", "the key for calculating the hash using the SHA256 algorithm")
 
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
 	if _, exist := os.LookupEnv("ADDRESS"); !exist {
 		cfg.Host = fHost
 	}
@@ -85,6 +88,10 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("DATABASE_DSN"); !exist {
 		cfg.DSN = fDSN
+	}
+
+	if _, exist := os.LookupEnv("KEY"); !exist {
+		cfg.Key = fKey
 	}
 
 	if err := parseAddress(cfg); err != nil {

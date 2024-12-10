@@ -54,7 +54,7 @@ func main() {
 		Addr: c.Host,
 		Handler: func(next http.Handler) http.Handler {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
-			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN)
+			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN, "KEY", c.Key)
 			return next
 		}(routing.NewRouter(s, *c, l)),
 	}

@@ -31,7 +31,7 @@ func NewStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) Ping(ctx context.Context) error {
+func (ms *MemStorage) Ping(_ context.Context) error {
 	return nil
 }
 
@@ -88,7 +88,7 @@ func (ms *MemStorage) SetMetric(ctx context.Context, mName string, metric types.
 	return nil
 }
 
-func (ms *MemStorage) setCounter(ctx context.Context, mName string, metric types.Metric) error {
+func (ms *MemStorage) setCounter(_ context.Context, mName string, metric types.Metric) error {
 	if oldMetric, ok := ms.Storage[mName]; ok {
 		oldValue, ok := oldMetric.Value.(int64)
 		if !ok {
@@ -110,7 +110,7 @@ func (ms *MemStorage) SetBackup(c chan struct{}) {
 	ms.bkp.c = c
 }
 
-func (ms *MemStorage) Metric(ctx context.Context, key string) (types.Metric, error) {
+func (ms *MemStorage) Metric(_ context.Context, key string) (types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	metric, ok := ms.Storage[key]
@@ -120,7 +120,7 @@ func (ms *MemStorage) Metric(ctx context.Context, key string) (types.Metric, err
 	return metric, nil
 }
 
-func (ms *MemStorage) Metrics(ctx context.Context) (map[string]types.Metric, error) {
+func (ms *MemStorage) Metrics(_ context.Context) (map[string]types.Metric, error) {
 	ms.Mu.RLock()
 	defer ms.Mu.RUnlock()
 	copyStorage := make(storage, len(ms.Storage))
