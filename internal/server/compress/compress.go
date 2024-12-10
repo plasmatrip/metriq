@@ -43,7 +43,7 @@ type compressReader struct {
 	zr *gzip.Reader
 }
 
-func NewComptessReader(r io.ReadCloser) (*compressReader, error) {
+func NewCompressReader(r io.ReadCloser) (*compressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func WithCompressed(next http.Handler) http.Handler {
 		contentEnciding := r.Header.Get("Content-Encoding")
 		sendsGzip := strings.Contains(contentEnciding, "gzip")
 		if sendsGzip {
-			cr, err := NewComptessReader(r.Body)
+			cr, err := NewCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return

@@ -49,6 +49,19 @@ func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
+	// если есть ключ, хэшируем ответ
+	if len(h.config.Key) > 0 {
+		hash, err := h.Sum(resp)
+		if err != nil {
+			h.lg.Sugar.Infow("error in request handler", "error: ", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("HashSHA256", hash)
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }

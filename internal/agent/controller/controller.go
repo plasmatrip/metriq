@@ -61,6 +61,23 @@ func (c Controller) SendMetricsBatch() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "application/gzip")
 
+	// если есть ключ, хэшируем request body
+	if len(c.config.Key) > 0 {
+		copyBody, err := req.GetBody()
+		if err != nil {
+			return err
+		}
+
+		hash, err := c.Sum(copyBody)
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("HashSHA256", hash)
+	}
+
+	// в цикле пытаемся отправить на серевер метрики
+	// количество попыток, интервал в сек между попытками настраивается в конфиге
 	retryCount := 0
 	wait := c.config.StartRetryInterval
 	for {
