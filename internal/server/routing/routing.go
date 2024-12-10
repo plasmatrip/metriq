@@ -14,9 +14,9 @@ func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux
 
 	r := chi.NewRouter()
 
-	if c.Key != "" {
-		r.Use(h.WithHashing)
-	}
+	// if c.Key != "" {
+	r.Use(h.WithHashing)
+	// }
 
 	r.Use(compress.WithCompressed, l.WithLogging)
 
