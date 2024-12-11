@@ -47,7 +47,7 @@ func main() {
 		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
 	}
 	if c.DSN == "" {
-		backup.Start()
+		backup.Start(ctx)
 	}
 
 	server := http.Server{
