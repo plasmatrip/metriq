@@ -8,6 +8,9 @@ preproc: clean fmt test check-coverage
 .PHONY : build-all
 build-all: clean server agent run-autotests
 
+.PHONY : autotests
+autotests: run-autotests
+
 server:
 	go build -o ./bin/server ./cmd/server/main.go
 
@@ -22,6 +25,7 @@ clean:
 	-rm ./bin/agent 2>/dev/null
 	-rm ./bin/server 2>/dev/null
 	-rm ./cover.out 2>/dev/null
+	-rm ./backup.dat 2>dev/null
 
 check-coverage:
 	go tool cover -html cover.out -o cover.html
@@ -39,7 +43,7 @@ SERVER_PORT := 8080
 ADDRESS := "localhost:8080"
 TEMP_FILE := backup.dat
 .PHONY : run-autotestsg
-# run-autotests: iter14
+# run-autotests: iter13
 run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10 iter11 iter12 iter13 iter14 iter14race-condition
 
 .PHONY : iter1

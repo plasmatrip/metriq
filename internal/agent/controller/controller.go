@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand/v2"
 	"net/http"
 	"runtime"
@@ -16,19 +17,48 @@ import (
 	"github.com/plasmatrip/metriq/internal/models"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/types"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
-type Controller struct {
-	Repo   storage.Repository
-	Client http.Client
-	config config.Config
+type Result struct {
+	Err error
 }
 
-func NewController(repo storage.Repository, config config.Config) *Controller {
-	return &Controller{Repo: repo, Client: http.Client{Timeout: config.ClientTimeout}, config: config}
+type Controller struct {
+	Repo    storage.Repository
+	Client  http.Client
+	cfg     config.Config
+	Works   chan func() error
+	Results chan Result
+}
+
+func NewController(repo storage.Repository, cfg config.Config) *Controller {
+	return &Controller{Repo: repo, Client: http.Client{Timeout: cfg.ClientTimeout}, cfg: cfg, Works: make(chan func() error), Results: make(chan Result)}
+}
+
+func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
+	for {
+		select {
+		case work := <-c.Works:
+			fmt.Printf("worker %d start\n", idx)
+			err := work()
+			result := Result{}
+			if err != nil {
+				result.Err = err
+			}
+			c.Results <- result
+			fmt.Printf("worker %d end\n", idx)
+		case <-ctx.Done():
+			fmt.Printf("worker %d stop\n", idx)
+			return
+		}
+	}
 }
 
 func (c Controller) SendMetricsBatch() error {
+	fmt.Println("send: ", time.Now().Format("15:04:05"))
+
 	metrics, err := c.Repo.Metrics(context.Background())
 	if len(metrics) == 0 {
 		return nil
@@ -53,7 +83,7 @@ func (c Controller) SendMetricsBatch() error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://"+c.config.Host+"/updates", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/updates", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -62,7 +92,7 @@ func (c Controller) SendMetricsBatch() error {
 	req.Header.Set("Content-Encoding", "application/gzip")
 
 	// если есть ключ, хэшируем request body
-	if len(c.config.Key) > 0 {
+	if len(c.cfg.Key) > 0 {
 		copyBody, err := req.GetBody()
 		if err != nil {
 			return err
@@ -79,13 +109,13 @@ func (c Controller) SendMetricsBatch() error {
 	// в цикле пытаемся отправить на серевер метрики
 	// количество попыток, интервал в сек между попытками настраивается в конфиге
 	retryCount := 0
-	wait := c.config.StartRetryInterval
+	wait := c.cfg.StartRetryInterval
 	for {
 		resp, err := c.Client.Do(req)
-		if errors.Is(err, syscall.ECONNREFUSED) && retryCount < c.config.MaxRetries {
+		if errors.Is(err, syscall.ECONNREFUSED) && retryCount < c.cfg.MaxRetries {
 			time.Sleep(wait)
 			retryCount++
-			wait += c.config.RetryInterval
+			wait += c.cfg.RetryInterval
 			continue
 		}
 		if err != nil {
@@ -114,7 +144,7 @@ func (c Controller) SendMetrics() error {
 			return err
 		}
 
-		req, err := http.NewRequest(http.MethodPost, "http://"+c.config.Host+"/update", bytes.NewReader(data))
+		req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/update", bytes.NewReader(data))
 		if err != nil {
 			return err
 		}
@@ -163,4 +193,21 @@ func (c Controller) UpdateMetrics(ctx context.Context) {
 	c.Repo.SetMetric(ctx, "NumForcedGC", types.Metric{MetricType: types.Gauge, Value: float64(rtm.NumForcedGC)})
 	c.Repo.SetMetric(ctx, "GCCPUFraction", types.Metric{MetricType: types.Gauge, Value: rtm.GCCPUFraction})
 	c.Repo.SetMetric(ctx, "RandomValue", types.Metric{MetricType: types.Gauge, Value: rand.Float64()})
+}
+
+func (c Controller) UpdatePSMetrics(ctx context.Context) error {
+	mem, err := mem.VirtualMemory()
+	if err != nil {
+		return err
+	}
+
+	cpu, err := cpu.Percent(0, false)
+	if err != nil {
+		return err
+	}
+
+	c.Repo.SetMetric(ctx, "TotalMemory", types.Metric{MetricType: types.Gauge, Value: float64(mem.Total)})
+	c.Repo.SetMetric(ctx, "FreeMemory", types.Metric{MetricType: types.Gauge, Value: float64(mem.Free)})
+	c.Repo.SetMetric(ctx, "CPUutilization1", types.Metric{MetricType: types.Gauge, Value: cpu[0]})
+	return nil
 }

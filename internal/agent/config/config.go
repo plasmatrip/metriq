@@ -20,6 +20,7 @@ const (
 	retryInterval      = time.Second * 2
 	startRetryInterval = time.Second * 1
 	maxRetries         = 3
+	rateLimit          = 5
 )
 
 type Config struct {
@@ -27,6 +28,7 @@ type Config struct {
 	PollInterval       int           `env:"POLL_INTERVAL"`   // интервал в сек обновления метрик
 	ReportInterval     int           `env:"REPORT_INTERVAL"` // интервал в сек отправки метрик на сервер
 	Key                string        `env:"KEY"`             // ключ для вычисления хэша по SHA256
+	RateLimit          int           `env:"RATE_LIMIT"`      //количество одновременно исходящих запросов на сервер
 	ClientTimeout      time.Duration // таймаут для http клиента
 	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторной отправки метрик на сервер
 	StartRetryInterval time.Duration // начиниаем повторную отправку через сек
@@ -59,6 +61,9 @@ func NewConfig() (*Config, error) {
 	var fReportInterval int
 	cl.IntVar(&fReportInterval, "r", reportInterval, "metrics polling frequency")
 
+	var fRateLimit int
+	cl.IntVar(&fRateLimit, "l", rateLimit, "maximum number of workers")
+
 	var fKey string
 	cl.StringVar(&fKey, "k", "", "the key for calculating the hash using the SHA256 algorithm")
 
@@ -66,23 +71,6 @@ func NewConfig() (*Config, error) {
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
-
-	// если переменная есть парсим адрес, если порт задан не числом прокидываем ошибку наверх
-	// if len(cfg.Host) != 0 {
-	// 	if err := parseAddress(cfg); err != nil {
-	// 		return nil, fmt.Errorf("port parsing error: %w", err)
-	// 	}
-
-	// 	if cfg.PollInterval <= 0 {
-	// 		cfg.PollInterval = pollInterval
-	// 	}
-
-	// 	if cfg.ReportInterval <= 0 {
-	// 		cfg.ReportInterval = reportInterval
-	// 	}
-
-	// 	return cfg, nil
-	// }
 
 	if _, exist := os.LookupEnv("ADDRESS"); !exist {
 		cfg.Host = fHost
@@ -98,6 +86,10 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("KEY"); !exist {
 		cfg.Key = fKey
+	}
+
+	if _, exist := os.LookupEnv("RATE_LIMIT"); !exist {
+		cfg.RateLimit = fRateLimit
 	}
 
 	if err := parseAddress(cfg); err != nil {

@@ -13,7 +13,7 @@ func (c Controller) Sum(reqBody io.ReadCloser) (string, error) {
 		return "", err
 	}
 
-	h := hmac.New(sha256.New, []byte(c.config.Key))
+	h := hmac.New(sha256.New, []byte(c.cfg.Key))
 	h.Write(body)
 	dst := h.Sum(nil)
 	hash := base64.StdEncoding.EncodeToString(dst)

@@ -46,8 +46,6 @@ func (bkp Backup) Start(ctx context.Context) {
 	if bkp.cfg.StoreInterval == 0 {
 		go func() {
 			c := make(chan struct{})
-			// defer close(c)
-
 			bkp.stor.SetBackup(c)
 		BACKUPER:
 			for {
