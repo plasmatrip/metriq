@@ -83,6 +83,11 @@ func (ms *MemStorage) SetMetric(ctx context.Context, mName string, metric types.
 
 	if ms.bkp.do {
 		ms.bkp.c <- struct{}{}
+		select {
+		case <-ctx.Done():
+			close(ms.bkp.c)
+		default:
+		}
 	}
 
 	return nil
