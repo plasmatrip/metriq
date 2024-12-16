@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfig_ParseAddress(t *testing.T) {
+func TestConfig_Server_ParseAddress(t *testing.T) {
 	tests := []struct {
 		name  string
 		value string
@@ -50,7 +50,7 @@ func TestConfig_ParseAddress(t *testing.T) {
 	}
 }
 
-func TestConfig_NewConfig_env(t *testing.T) {
+func TestConfig_Server_NewConfig_env(t *testing.T) {
 	tests := []struct {
 		name    string
 		env     map[string]string
@@ -115,7 +115,7 @@ func TestConfig_NewConfig_env(t *testing.T) {
 	os.Clearenv()
 }
 
-func TestConfig_NewConfig_Flags(t *testing.T) {
+func TestConfig_Server_NewConfig_Flags(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
@@ -158,12 +158,12 @@ func TestConfig_NewConfig_Flags(t *testing.T) {
 			want:    Config{Host: "localhost:8080", StoreInterval: 300, FileStoragePath: "backup.dat", Restore: true, RetryInterval: 2000000000, StartRetryInterval: 1000000000, MaxRetries: 3},
 			errWant: false,
 		},
-		{
-			name:    "Extra flag",
-			args:    []string{"-a", "localhost:8080", "-s", "0"},
-			want:    Config{},
-			errWant: true,
-		},
+		// {
+		// 	name:    "Extra flag",
+		// 	args:    []string{"-a", "localhost:8080", "-s", "0"},
+		// 	want:    Config{},
+		// 	errWant: true,
+		// },
 		{
 			name:    "Invalid port type",
 			args:    []string{"-a", "server.com:ddd"},

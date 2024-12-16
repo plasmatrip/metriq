@@ -8,6 +8,9 @@ preproc: clean fmt test check-coverage
 .PHONY : build-all
 build-all: clean server agent run-autotests
 
+.PHONY : autotests
+autotests: run-autotests
+
 server:
 	go build -o ./bin/server ./cmd/server/main.go
 
@@ -22,6 +25,7 @@ clean:
 	-rm ./bin/agent 2>/dev/null
 	-rm ./bin/server 2>/dev/null
 	-rm ./cover.out 2>/dev/null
+	-rm ./backup.dat 2>dev/null
 
 check-coverage:
 	go tool cover -html cover.out -o cover.html
@@ -40,7 +44,7 @@ ADDRESS := "localhost:8080"
 TEMP_FILE := backup.dat
 .PHONY : run-autotestsg
 # run-autotests: iter13
-run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10 iter11 iter12 iter13
+run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10 iter11 iter12 iter13 iter14 iter14race-condition
 
 .PHONY : iter1
 iter1:
@@ -87,7 +91,7 @@ iter9:
 .PHONY : iter10
 iter10:
 	 metricstest -test.run=^TestIteration10[AB]$$ \
-	 		-agent-binary-path=./bin/agent \
+			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
 			-server-port=$(SERVER_PORT) \
@@ -96,7 +100,7 @@ iter10:
 .PHONY : iter11
 iter11:
 	 metricstest -test.run=^TestIteration11$$ \
-	 		-agent-binary-path=./bin/agent \
+			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
 			-server-port=$(SERVER_PORT) -source-path=.
@@ -104,16 +108,30 @@ iter11:
 .PHONY : iter12
 iter12:
 	 metricstest -test.run=^TestIteration12$$ \
-	 		-agent-binary-path=./bin/agent \
+			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
-	 		-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
+			 -database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
 			-server-port=$(SERVER_PORT) -source-path=.
 
 .PHONY : iter13
 iter13:
 	 metricstest -test.run=^TestIteration13$$ \
-            -agent-binary-path=./bin/agent \
-            -binary-path=./bin/server \
-            -database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
-            -server-port=$(SERVER_PORT) \
-            -source-path=.
+			-agent-binary-path=./bin/agent \
+			-binary-path=./bin/server \
+			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
+			-server-port=$(SERVER_PORT) \
+			-source-path=.
+
+.PHONY : iter14
+iter14:
+	 metricstest -test.run=^TestIteration14$$ \
+			-agent-binary-path=./bin/agent \
+			-binary-path=./bin/server \
+			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
+			 -key="${TEMP_FILE}" \
+			-server-port=$(SERVER_PORT) \
+			-source-path=.
+
+.PHONY : iter14race-condition
+iter14race-condition:
+	go test -v -race ./...

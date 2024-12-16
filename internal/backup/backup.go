@@ -36,7 +36,7 @@ func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*
 	}, nil
 }
 
-func (bkp Backup) Start() {
+func (bkp Backup) Start(ctx context.Context) {
 	if bkp.cfg.Restore {
 		if err := bkp.load(); err != nil {
 			bkp.lg.Sugar.Fatalw("error loading from backup: ", err)
@@ -46,13 +46,16 @@ func (bkp Backup) Start() {
 	if bkp.cfg.StoreInterval == 0 {
 		go func() {
 			c := make(chan struct{})
-			defer close(c)
-
 			bkp.stor.SetBackup(c)
-			select {
-			case <-c:
-				bkp.Save()
-			default:
+		BACKUPER:
+			for {
+				select {
+				case <-c:
+					bkp.Save()
+				case <-ctx.Done():
+					bkp.Save()
+					break BACKUPER
+				}
 			}
 		}()
 	} else {
