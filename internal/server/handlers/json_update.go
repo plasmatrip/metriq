@@ -1,3 +1,9 @@
+// The JSONUpdate function is a request handler that processes incoming requests to update a metric.
+// It reads the request body, decodes the JSON into a models.Metrics struct and checks that the metric type is valid.
+// If the metric type is invalid, it logs an error and returns a 400 status code.
+// It then checks that the metric name is not empty. If the name is empty, it logs an error and returns a 404 status code.
+// If all checks pass, it calls the SetMetric method of the repository to update the metric.
+// The function does not return any data in the response body.
 package handlers
 
 import (
@@ -24,10 +30,16 @@ func (h *Handlers) JSONUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//проверяем имя метрики
+	//проверяем имя метрики и не пустое ли оно
 	if len(jMetric.ID) == 0 {
 		h.lg.Sugar.Infow("error in request handler", "error: ", "the name of the metric is empty")
 		http.Error(w, "the name of the metric is empty", http.StatusNotFound)
+		return
+	}
+	_, err := h.Repo.Metric(r.Context(), jMetric.ID)
+	if err != nil {
+		h.lg.Sugar.Infow("error in request handler", "error: ", "metric not found")
+		http.Error(w, "metric not found", http.StatusNotFound)
 		return
 	}
 

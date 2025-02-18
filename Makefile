@@ -48,40 +48,40 @@ run-autotests: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10 iter
 
 .PHONY : iter1
 iter1:
-	metricstest -test.run=^TestIteration1$$ -binary-path=./bin/server
+	metricstest-new -test.run=^TestIteration1$$ -binary-path=./bin/server
 
 .PHONY : iter2
 iter2:
-	metricstest -test.run=^TestIteration2A$$ -source-path=. -agent-binary-path=./bin/agent
+	metricstest-new -test.run=^TestIteration2A$$ -source-path=. -agent-binary-path=./bin/agent
 
 .PHONY : iter3
 iter3:
-	metricstest -test.run=^TestIteration3A$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server
-	metricstest -test.run=^TestIteration3B$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server
+	metricstest-new -test.run=^TestIteration3A$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server
+	metricstest-new -test.run=^TestIteration3B$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server
 
 .PHONY : iter4
 iter4:
-	metricstest -test.run=^TestIteration4$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT)
+	metricstest-new -test.run=^TestIteration4$$ -source-path=. -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT)
 
 .PHONY : iter5
 iter5:
-	metricstest -test.run=^TestIteration5$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
+	metricstest-new -test.run=^TestIteration5$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
 
 .PHONY : iter6
 iter6:
-	metricstest -test.run=^TestIteration6$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
+	metricstest-new -test.run=^TestIteration6$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
 
 .PHONY : iter7
 iter7:
-	metricstest -test.run=^TestIteration7$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
+	metricstest-new -test.run=^TestIteration7$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
 
 .PHONY : iter8
 iter8:
-	metricstest -test.run=^TestIteration8$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
+	metricstest-new -test.run=^TestIteration8$$ -agent-binary-path=./bin/agent -binary-path=./bin/server -server-port=$(SERVER_PORT) -source-path=.
 
 .PHONY : iter9
 iter9:
-	metricstest -test.run=^TestIteration9$$ \
+	metricstest-new -test.run=^TestIteration9$$ \
 	-agent-binary-path=./bin/agent \
 	-binary-path=./bin/server \
 	-file-storage-path=$(TEMP_FILE) \
@@ -90,7 +90,7 @@ iter9:
 
 .PHONY : iter10
 iter10:
-	 metricstest -test.run=^TestIteration10[AB]$$ \
+	 metricstest-new -test.run=^TestIteration10[AB]$$ \
 			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
@@ -99,7 +99,7 @@ iter10:
 
 .PHONY : iter11
 iter11:
-	 metricstest -test.run=^TestIteration11$$ \
+	 metricstest-new -test.run=^TestIteration11$$ \
 			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
@@ -107,7 +107,7 @@ iter11:
 
 .PHONY : iter12
 iter12:
-	 metricstest -test.run=^TestIteration12$$ \
+	 metricstest-new -test.run=^TestIteration12$$ \
 			 -agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			 -database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
@@ -115,7 +115,7 @@ iter12:
 
 .PHONY : iter13
 iter13:
-	 metricstest -test.run=^TestIteration13$$ \
+	 metricstest-new -test.run=^TestIteration13$$ \
 			-agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \
@@ -124,7 +124,7 @@ iter13:
 
 .PHONY : iter14
 iter14:
-	 metricstest -test.run=^TestIteration14$$ \
+	 metricstest-new -test.run=^TestIteration14$$ \
 			-agent-binary-path=./bin/agent \
 			-binary-path=./bin/server \
 			-database-dsn='postgres://metriq:password@localhost:5432/metriq?sslmode=disable' \

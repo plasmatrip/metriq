@@ -1,3 +1,13 @@
+// This package contains the configuration for the metrics collection agent.
+// The agent is responsible for collecting various metrics about the application
+// and sending them to the server. The configuration is read from environment
+// variables, flags and a configuration file. The configuration provides the
+// server address, the polling interval for collecting metrics and the path to
+// the file where metrics are saved. The agent uses a context to listen for
+// termination signals and sets up goroutines for collecting application
+// metrics, collecting system metrics using gopsutil and sending metrics to the
+// server. The agent gracefully shuts down all goroutines and exits when it
+// receives a termination signal.
 package config
 
 import (

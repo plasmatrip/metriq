@@ -1,3 +1,6 @@
+// The Value function handles HTTP requests for retrieving the value of a metric.
+// It retrieves the metric value from the repository based on the provided metric name and
+// type, and formats the value as a string based on the metric type.
 package handlers
 
 import (
@@ -19,14 +22,14 @@ func (h *Handlers) Value(w http.ResponseWriter, r *http.Request) {
 	//проверяем тип метрики
 	mType := r.PathValue("metricType")
 	if err := types.CheckMetricType(mType); err != nil {
-		h.lg.Sugar.Infoln("Metric name is undefined")
+		h.lg.Sugar.Infoln("Metric type is undefined")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	metric, err := h.Repo.Metric(r.Context(), mName)
 	if err != nil {
-		h.lg.Sugar.Infoln("Metric name is undefined")
+		h.lg.Sugar.Infoln("Metric not found")
 		http.Error(w, "Metric not found", http.StatusNotFound)
 		return
 	}

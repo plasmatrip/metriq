@@ -18,10 +18,10 @@ import (
 type Backup struct {
 	cfg  config.Config
 	stor storage.Repository
-	lg   *logger.Logger
+	lg   logger.Logger
 }
 
-func NewBackup(cfg config.Config, stor storage.Repository, lg *logger.Logger) (*Backup, error) {
+func NewBackup(cfg config.Config, stor storage.Repository, lg logger.Logger) (*Backup, error) {
 	dir := filepath.Dir(cfg.FileStoragePath)
 	if _, err := os.Stat(dir); err != nil {
 		if err := os.Mkdir(dir, 0755); err != nil {

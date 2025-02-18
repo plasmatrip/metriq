@@ -1,3 +1,12 @@
+// This package contains the main function for the metrics collection agent. The
+// agent is responsible for collecting various metrics about the application and
+// sending them to the server. The main function initializes the agent by
+// creating a context to listen for termination signals and setting up goroutines
+// for collecting application metrics, collecting system metrics using gopsutil,
+// and sending metrics to the server. The agent uses a configuration module to
+// determine the polling intervals for collecting metrics and the server address.
+// The agent gracefully shuts down all goroutines and exits when it receives a
+// termination signal.
 package main
 
 import (
@@ -6,16 +15,26 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
+
+	_ "net/http/pprof"
 
 	"github.com/plasmatrip/metriq/internal/agent/config"
 	"github.com/plasmatrip/metriq/internal/agent/controller"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
+// main initializes the metrics collection agent. It sets up a context to listen
+// for termination signals and configures the agent using settings from the
+// configuration module. The function starts three goroutines: one for collecting
+// application metrics, one for collecting system metrics using gopsutil, and
+// one for sending metrics to the server. Each goroutine runs periodically based
+// on configuration-defined intervals. The function waits for a stop signal to
+// gracefully shut down all goroutines and exit.
 func main() {
-	// создаем контекст и прослишиваем сигналы прекращения работы программы
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	// Create a context to listen for termination signals
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	cfg, err := config.NewConfig()
@@ -26,9 +45,10 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	// запускаем горутину сбора метрик
-	// в цикле читаем тикер и отмену контекста, при отмене контекста заверашем горутину
-	// по тикеру обновляем метрики
+	// start goroutine to collect application metrics
+	// in an infinite loop, it reads from a ticker and the context's Done channel
+	// when the context is canceled, the goroutine exits
+	// on each ticker event, it updates the metrics
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -45,9 +65,10 @@ func main() {
 		}
 	}()
 
-	// запускаем горутину сбора метрик c помощью пакета gopsutil
-	// в цикле читаем тикер и отмену контекста, при отмене контекста заверашем горутину
-	// по тикеру обновляем метрики
+	// Start a goroutine to collect metrics using the gopsutil package.
+	// In a loop, it reads from a ticker and the context's Done channel.
+	// When the context is canceled, the goroutine exits.
+	// On each ticker event, it updates the metrics.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -67,9 +88,10 @@ func main() {
 		}
 	}()
 
-	// запускаем горутину отправки метрик
-	// в цикле читаем тикер и отмену контекста, при отмене контекста заверашем горутину
-	// по тикеру отправляем метрики на сервер
+	// start goroutine to send metrics to the server
+	// in a loop, it reads from a ticker and the context's Done channel
+	// when the context is canceled, the goroutine exits
+	// on each ticker event, it sends the collected metrics to the server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -99,10 +121,10 @@ The interval for collecting metrics is %d seconds, the interval for transmitting
 Server address: %s
 `, cfg.PollInterval, cfg.ReportInterval, cfg.Host)
 
-	// ждем отмены контекста
+	// wait for the context to be canceled
 	<-ctx.Done()
 
-	// ожидаем завершения горутин и выходим из программы
+	// wait for all goroutines to finish and exit the program
 	wg.Wait()
 
 	os.Exit(0)

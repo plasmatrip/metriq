@@ -35,9 +35,9 @@ func (r *loggingResponseWriter) WriteHeader(status int) {
 	r.responseData.status = status
 }
 
-func NewLogger() (*Logger, error) {
+func NewLogger() (Logger, error) {
 	zap, err := zap.NewDevelopment()
-	return &Logger{zap: zap, Sugar: zap.Sugar()}, err
+	return Logger{zap: zap, Sugar: zap.Sugar()}, err
 }
 
 func (l *Logger) Close() {

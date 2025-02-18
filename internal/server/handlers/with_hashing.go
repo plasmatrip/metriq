@@ -1,3 +1,10 @@
+// This middleware function is used to authenticate incoming requests to the server.
+// It computes a sha256 hash of the request body and compares it with the value
+// of the "HashSHA256" header from the request. If the values match, the request
+// is allowed to proceed to the next handler in the chain. If the values do not
+// match, the function returns an error response with a status code of 400.
+// The function is used to prevent tampering with the request body and ensure
+// that the data is not modified during transport.
 package handlers
 
 import (

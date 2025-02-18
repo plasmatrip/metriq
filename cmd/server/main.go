@@ -1,3 +1,9 @@
+// The main function is the entry point of the server application.
+// It sets up a goroutine to listen for termination signals,
+// sets up a logger and a storage object, and then starts the HTTP server.
+// The server is configured with the routing package and a storage object.
+// The storage object is an interface that provides methods to store and retrieve metrics.
+// The server also starts a goroutine to perform backups of the storage object at regular intervals.
 package main
 
 import (
@@ -5,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
+	_ "net/http/pprof"
 
 	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
@@ -15,6 +23,18 @@ import (
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
+// The main function sets up the server application and starts it.
+// It sets up a goroutine to listen for termination signals and
+// sets up a logger and a storage object. The storage object is an
+// interface that provides methods to store and retrieve metrics.
+// The logger is also an interface that provides methods to log messages.
+// The server is configured with the routing package and a storage object.
+// The server also starts a goroutine to perform backups of the storage object
+// at regular intervals. The backup function takes a context, a storage object,
+// a logger and a config object as arguments. The config object is used to
+// determine the path to the backup file. The backup function is started in a
+// goroutine and runs until the context is canceled. If the context is canceled,
+// the backup function stops and the server is shut down.
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -34,7 +54,7 @@ func main() {
 	if c.DSN == "" {
 		s = mem.NewStorage()
 	} else {
-		s, err = db.NewPostgresStorage(ctx, c.DSN, *l)
+		s, err = db.NewPostgresStorage(ctx, c.DSN, l)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
 			os.Exit(1)

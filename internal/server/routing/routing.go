@@ -2,6 +2,7 @@ package routing
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/server/compress"
 	"github.com/plasmatrip/metriq/internal/server/config"
@@ -9,16 +10,18 @@ import (
 	"github.com/plasmatrip/metriq/internal/storage"
 )
 
-func NewRouter(s storage.Repository, c config.Config, l *logger.Logger) *chi.Mux {
-	h := handlers.NewHandlers(s, c, *l)
+func NewRouter(s storage.Repository, c config.Config, l logger.Logger) *chi.Mux {
+	h := handlers.NewHandlers(s, c, l)
 
 	r := chi.NewRouter()
 
-	// if c.Key != "" {
-	r.Use(h.WithHashing)
-	// }
+	if c.Key != "" {
+		r.Use(h.WithHashing)
+	}
 
-	r.Use(compress.WithCompressed, l.WithLogging)
+	r.Use(compress.WithCompression(l), l.WithLogging)
+
+	r.Mount("/debug", middleware.Profiler())
 
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", h.JSONUpdate)
