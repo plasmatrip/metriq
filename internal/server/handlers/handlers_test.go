@@ -203,7 +203,7 @@ func TestJSONUpdateHandler(t *testing.T) {
 			assert.NoError(t, err)
 
 			res, err := serv.Client().Do(request)
-			// require.NotNil(t, res)
+			require.NotNil(t, res)
 			assert.NoError(t, err)
 			assert.Equal(t, test.want, res.StatusCode)
 			defer res.Body.Close()
