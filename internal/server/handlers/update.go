@@ -1,3 +1,13 @@
+// The Update function handles HTTP requests for updating a metric. It extracts the metric type,
+// name, and value from the request path. The function performs several validations:
+// 1. Metric Type Validation: It checks if the provided metric type is valid using the CheckMetricType
+//    function. If it's not valid, the function responds with a 400 Bad Request status.
+// 2. Metric Name Validation: It ensures that the metric name is not empty. If the name is empty, it
+//    responds with a 404 Not Found status.
+// 3. Metric Value Validation: It validates the metric value based on its type using the CheckValue
+//    function. If the value is invalid, it responds with a 400 Bad Request status.
+// Once all validations pass, the function proceeds to handle the metric update logic.
+
 package handlers
 
 import (

@@ -33,10 +33,24 @@ type Controller struct {
 	Results chan Result
 }
 
+// NewController creates a new Controller instance. It takes a Repository and a
+// Config as arguments, and returns a pointer to a new Controller. The returned
+// Controller is initialized with the provided Repository and Config, and has
+// channels for worker functions and results.
 func NewController(repo storage.Repository, cfg config.Config) *Controller {
-	return &Controller{Repo: repo, Client: http.Client{Timeout: cfg.ClientTimeout}, cfg: cfg, Works: make(chan func() error), Results: make(chan Result)}
+	return &Controller{
+		Repo:    repo,
+		Client:  http.Client{Timeout: cfg.ClientTimeout},
+		cfg:     cfg,
+		Works:   make(chan func() error),
+		Results: make(chan Result),
+	}
 }
 
+// SendMetricsWorker starts a goroutine that runs until the given context is
+// cancelled. It takes work from the Works channel, runs it, and sends the result
+// (if any) to the Results channel. The given idx is used to identify the worker
+// in log messages.
 func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
 	for {
 		select {
@@ -56,8 +70,12 @@ func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
 	}
 }
 
+// SendMetricsBatch retrieves metrics from the repository, converts them to the
+// models.Metrics format, compresses them, and sends them to the server via a POST
+// request. It handles request retries in case of a connection failure. If a key is
+// present in the configuration, it hashes the request body before sending. Returns
+// an error if any step fails, or nil if the operation succeeds.
 func (c Controller) SendMetricsBatch() error {
-	fmt.Println("send: ", time.Now().Format("15:04:05"))
 
 	metrics, err := c.Repo.Metrics(context.Background())
 	if len(metrics) == 0 {
@@ -91,7 +109,7 @@ func (c Controller) SendMetricsBatch() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "application/gzip")
 
-	// если есть ключ, хэшируем request body
+	// if there is a key, hash the request body
 	if len(c.cfg.Key) > 0 {
 		copyBody, err := req.GetBody()
 		if err != nil {
@@ -106,8 +124,8 @@ func (c Controller) SendMetricsBatch() error {
 		req.Header.Set("HashSHA256", hash)
 	}
 
-	// в цикле пытаемся отправить на серевер метрики
-	// количество попыток, интервал в сек между попытками настраивается в конфиге
+	// in a loop, try to send metrics to the server
+	// number of attempts, interval in seconds between attempts is configured
 	retryCount := 0
 	wait := c.cfg.StartRetryInterval
 	for {

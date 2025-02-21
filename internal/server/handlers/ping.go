@@ -1,3 +1,6 @@
+// This function is a handler for "/ping" endpoint. It sends a request to database to check if it is alive.
+// If the request fails, it returns 500 status code.
+// If the request is successfull, it returns 200 status code.
 package handlers
 
 import (

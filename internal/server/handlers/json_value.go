@@ -1,3 +1,12 @@
+// The function JSONValue is a request handler that returns the value of
+// a metric by its name. The function takes the name of the metric from the
+// URL, finds the metric in the repository and returns its value in the
+// response body. If the metric is not found, the function returns the
+// 404 status code. The function also checks the request method and
+// returns the 405 status code if the method is not GET.
+//
+// The function uses the logger to log information about the request,
+// such as the request method and the URL.
 package handlers
 
 import (

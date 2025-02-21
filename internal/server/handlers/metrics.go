@@ -1,3 +1,7 @@
+// Metrics - GET /metrics - returns a list of all metrics and their current values as HTML page.
+// It does not take any parameters. It returns a list of all metrics and their current values as HTML page.
+// The list of metrics is retrieved from the repository and then written to the HTTP response.
+// If any error occur during the request, it returns an error with the appropriate HTTP status code.
 package handlers
 
 import (
