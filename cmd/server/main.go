@@ -9,15 +9,14 @@ package main
 import (
 	"context"
 	"net/http"
-	"os"
-	"os/signal"
-
 	_ "net/http/pprof"
+	"os/signal"
+	"syscall"
 
 	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/server/config"
-	"github.com/plasmatrip/metriq/internal/server/routing"
+	"github.com/plasmatrip/metriq/internal/server/router"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/storage/db"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
@@ -36,7 +35,7 @@ import (
 // goroutine and runs until the context is canceled. If the context is canceled,
 // the backup function stops and the server is shut down.
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	c, err := config.NewConfig()
@@ -57,7 +56,8 @@ func main() {
 		s, err = db.NewPostgresStorage(ctx, c.DSN, l)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
-			os.Exit(1)
+			return
+			//os.Exit(1)
 		}
 		defer s.Close()
 	}
@@ -76,7 +76,7 @@ func main() {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
 			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN, "KEY", c.Key)
 			return next
-		}(routing.NewRouter(s, *c, l)),
+		}(router.NewRouter(s, *c, l)),
 	}
 
 	go server.ListenAndServe()
@@ -90,5 +90,7 @@ func main() {
 
 	server.Shutdown(context.Background())
 
-	os.Exit(0)
+	l.Sugar.Infow("The server has been shut down gracefully")
+
+	// os.Exit(0)
 }

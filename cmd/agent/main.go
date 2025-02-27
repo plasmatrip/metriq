@@ -34,7 +34,7 @@ import (
 // gracefully shut down all goroutines and exit.
 func main() {
 	// Create a context to listen for termination signals
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
 	cfg, err := config.NewConfig()
@@ -127,5 +127,7 @@ Server address: %s
 	// wait for all goroutines to finish and exit the program
 	wg.Wait()
 
-	os.Exit(0)
+	fmt.Println("The agent has been shut down gracefully")
+
+	// os.Exit(0)
 }
