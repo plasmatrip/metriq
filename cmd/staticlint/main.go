@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fatih/errwrap/errwrap"
+	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
@@ -89,6 +91,10 @@ func main() {
 	}
 
 	mychecks := []*analysis.Analyzer{
+		// Package errwrap defines an Analyzer that checks for unnecessary wrapping of errors.
+		errwrap.Analyzer,
+		// Package errcheck defines an Analyzer that checks for unchecked errors.
+		errcheck.Analyzer,
 		// Package osexitcheck defines an Analyzer that checks for calls to os.Exit in main.go.
 		OSExitCheckAnalizer,
 		// Package printf defines an Analyzer that checks consistency of Printf format strings and arguments.
@@ -214,10 +220,4 @@ func main() {
 	multichecker.Main(
 		mychecks...,
 	)
-
-	// //errwrap
-	// checks = append(checks, errwrap.Analyzer)
-
-	// // errcheck
-	// checks = append(checks, errcheck.Analyzer)
 }
