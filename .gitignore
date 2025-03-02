@@ -30,3 +30,4 @@ bin/server
 cover.html
 backup.dat
 bin
+.DS_Store

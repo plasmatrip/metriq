@@ -10,8 +10,10 @@ import (
 	"context"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"os/signal"
 	"syscall"
+	"text/template"
 
 	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
@@ -21,6 +23,18 @@ import (
 	"github.com/plasmatrip/metriq/internal/storage/db"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
+
+var buildVersion string
+var buildDate string
+var buildCommit string
+
+const buildInfo = `
+	Server build info
+	Build version: {{if .BuildVersion}}{{.BuildVersion}}{{else}}"N/A"{{end}}
+	Build date: {{if .BuildDate}}{{.BuildDate}}{{else}}"N/A"{{end}}
+	Build commit: {{if .BuildCommit}}{{.BuildCommit}}{{else}}"N/A"{{end}}
+	
+`
 
 // The main function sets up the server application and starts it.
 // It sets up a goroutine to listen for termination signals and
@@ -37,6 +51,23 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	t := template.Must(template.New("buildInfo").Parse(buildInfo))
+
+	data := struct {
+		BuildVersion string
+		BuildDate    string
+		BuildCommit  string
+	}{
+		BuildVersion: buildVersion,
+		BuildDate:    buildDate,
+		BuildCommit:  buildCommit,
+	}
+
+	err := t.Execute(os.Stdout, data)
+	if err != nil {
+		panic(err)
+	}
 
 	c, err := config.NewConfig()
 	if err != nil {
@@ -91,6 +122,4 @@ func main() {
 	server.Shutdown(context.Background())
 
 	l.Sugar.Infow("The server has been shut down gracefully")
-
-	// os.Exit(0)
 }

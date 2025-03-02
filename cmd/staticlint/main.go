@@ -1,4 +1,4 @@
-// Package main provides a static analysis tool for Go programs. It is designed
+// Package staticlint provides a static analysis tool for Go programs. It is designed
 // to help developers identify and fix potential issues in their code by running
 // a set of predefined analyzers. These analyzers cover a wide range of common
 // coding mistakes and best practices, ensuring that the codebase remains clean,

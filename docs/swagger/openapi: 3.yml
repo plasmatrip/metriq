@@ -1,0 +1,251 @@
+openapi: 3.0.0
+info:
+  title: Metrics API
+  description: API для работы с метриками
+  version: 1.0.0
+servers:
+  - url: localhost:8080
+    description: Основной сервер
+
+paths:
+  /update/{metricType}/{metricName}/{metricValue}:
+    post:
+      summary: Обновление метрики
+      description: Обновляет значение метрики по её типу, имени и значению.
+      parameters:
+        - name: metricType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [gauge, counter]
+          description: Тип метрики (gauge или counter)
+        - name: metricName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя метрики
+        - name: metricValue
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Значение метрики
+      responses:
+        "200":
+          description: Успешное обновление метрики
+        "400":
+          description: Неверный тип метрики или значение
+        "404":
+          description: Имя метрики пустое или метрика не найдена
+
+  /value/{metricType}/{metricName}:
+    get:
+      summary: Получение значения метрики
+      description: Возвращает значение метрики по её типу и имени.
+      parameters:
+        - name: metricType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [gauge, counter]
+          description: Тип метрики (gauge или counter)
+        - name: metricName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Имя метрики
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: string
+        "400":
+          description: Неверный тип метрики или имя не указано
+        "404":
+          description: Метрика не найдена
+
+  /metrics:
+    get:
+      summary: Получение всех метрик
+      description: Возвращает список всех метрик и их значений в формате HTML.
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Метрики не найдены
+
+  /ping:
+    get:
+      summary: Проверка доступности базы данных
+      description: Проверяет, доступна ли база данных.
+      responses:
+        "200":
+          description: База данных доступна
+        "500":
+          description: Ошибка подключения к базе данных
+
+  /update:
+    post:
+      summary: Обновление метрики через JSON
+      description: Обновляет значение метрики, переданной в формате JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/GaugeMetric"
+                - $ref: "#/components/schemas/CounterMetric"
+            examples:
+              gaugeExample:
+                summary: Пример для метрики типа gauge
+                value:
+                  id: "cpu_usage"
+                  mtype: "gauge"
+                  value: 95.7
+              counterExample:
+                summary: Пример для метрики типа counter
+                value:
+                  id: "request_count"
+                  mtype: "counter"
+                  delta: 10
+      responses:
+        "200":
+          description: Успешное обновление метрики
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metric"
+        "400":
+          description: Неверный формат JSON или тип метрики
+        "404":
+          description: Имя метрики пустое или метрика не найдена
+
+  /updates:
+    post:
+      summary: Массовое обновление метрик через JSON
+      description: Обновляет несколько метрик, переданных в формате JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestMetricArray"
+            examples:
+              gaugeExample:
+                summary: Пример для метрики типа gauge
+                value:
+                  id: "cpu_usage"
+                  mtype: "gauge"
+                  value: 95.7
+              counterExample:
+                summary: Пример для метрики типа counter
+                value:
+                  id: "request_count"
+                  mtype: "counter"
+                  delta: 10
+      responses:
+        "200":
+          description: Успешное обновление метрик
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "5 metrics received"
+        "400":
+          description: Неверный формат JSON или тип метрики
+        "404":
+          description: Имя метрики пустое или метрика не найдена
+
+  /value:
+    post:
+      summary: Получение значения метрики через JSON
+      description: Возвращает значение метрики, переданной в формате JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestMetric"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metric"
+        "400":
+          description: Неверный формат JSON или тип метрики
+        "404":
+          description: Метрика не найдена
+
+components:
+  schemas:
+    RequestMetric:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Имя метрики
+        mtype:
+          type: string
+          enum: [gauge, counter]
+          description: Тип метрики
+      required:
+        - id
+        - mtype
+    RequestMetricArray:
+      type: array
+      items:
+        oneOf:
+          - $ref: "#/components/schemas/GaugeMetric"
+          - $ref: "#/components/schemas/CounterMetric"
+    Metric:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Имя метрики
+        mtype:
+          type: string
+          enum: [gauge, counter]
+          description: Тип метрики
+        delta:
+          type: integer
+          description: Значение для типа counter
+        value:
+          type: number
+          description: Значение для типа gauge
+      required:
+        - id
+        - mtype
+    GaugeMetric:
+      allOf:
+        - $ref: "#/components/schemas/Metric"
+        - type: object
+          properties:
+            value:
+              type: number
+              description: Значение для типа gauge
+          required:
+            - value
+    CounterMetric:
+      allOf:
+        - $ref: "#/components/schemas/Metric"
+        - type: object
+          properties:
+            delta:
+              type: integer
+              description: Значение для типа counter
+          required:
+            - delta
