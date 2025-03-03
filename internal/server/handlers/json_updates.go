@@ -27,7 +27,6 @@ var mPool = sync.Pool{
 
 func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 	jMetrics := mPool.Get().(*[]models.Metrics)
-	// jMetrics := []models.Metrics{}
 
 	if err := json.NewDecoder(r.Body).Decode(&jMetrics); err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)
