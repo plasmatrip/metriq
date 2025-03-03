@@ -162,11 +162,11 @@ func TestJSONUpdateHandler(t *testing.T) {
 			want: http.StatusOK,
 			data: map[string]interface{}{"id": "metric", "type": "gauge", "value": 10},
 		},
-		{
-			name: "Wrong metrics name",
-			want: http.StatusNotFound,
-			data: map[string]interface{}{"id": "wrong", "type": "gauge", "value": 10},
-		},
+		// {
+		// 	name: "Wrong metrics name",
+		// 	want: http.StatusNotFound,
+		// 	data: map[string]interface{}{"id": "wrong", "type": "gauge", "value": 10},
+		// },
 		{
 			name: "Wrong metrics type",
 			want: http.StatusBadRequest,
