@@ -72,7 +72,7 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metri
 		switch metric.MType {
 		case types.Gauge:
 			// пытаемся обновить метрику в БД, при ошибке прокидываем ее наверх
-			_, err := tx.Exec(ctx, insertGauge, pgx.NamedArgs{
+			_, err = tx.Exec(ctx, insertGauge, pgx.NamedArgs{
 				"id":    metric.ID,
 				"mType": metric.MType,
 				"value": metric.Value,
@@ -90,7 +90,7 @@ func (ps PostgresStorage) SetMetrics(ctx context.Context, metrics []models.Metri
 				return err
 			}
 		case types.Counter:
-			_, err := tx.Exec(ctx, insertCounter, pgx.NamedArgs{
+			_, err = tx.Exec(ctx, insertCounter, pgx.NamedArgs{
 				"id":    metric.ID,
 				"mType": metric.MType,
 				"delta": metric.Delta,

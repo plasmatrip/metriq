@@ -51,7 +51,7 @@ func (h *Handlers) JSONUpdate(w http.ResponseWriter, r *http.Request) {
 		value = *jMetric.Value
 	}
 
-	if err := h.Repo.SetMetric(r.Context(), jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
+	if err = h.Repo.SetMetric(r.Context(), jMetric.ID, types.Metric{MetricType: jMetric.MType, Value: value}); err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

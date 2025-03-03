@@ -9,19 +9,32 @@ package main
 import (
 	"context"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
-
-	_ "net/http/pprof"
+	"syscall"
+	"text/template"
 
 	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/server/config"
-	"github.com/plasmatrip/metriq/internal/server/routing"
+	"github.com/plasmatrip/metriq/internal/server/router"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/storage/db"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
+
+var buildVersion string
+var buildDate string
+var buildCommit string
+
+const buildInfo = `
+	Server build info
+	Build version: {{if .BuildVersion}}{{.BuildVersion}}{{else}}"N/A"{{end}}
+	Build date: {{if .BuildDate}}{{.BuildDate}}{{else}}"N/A"{{end}}
+	Build commit: {{if .BuildCommit}}{{.BuildCommit}}{{else}}"N/A"{{end}}
+	
+`
 
 // The main function sets up the server application and starts it.
 // It sets up a goroutine to listen for termination signals and
@@ -36,8 +49,25 @@ import (
 // goroutine and runs until the context is canceled. If the context is canceled,
 // the backup function stops and the server is shut down.
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	t := template.Must(template.New("buildInfo").Parse(buildInfo))
+
+	data := struct {
+		BuildVersion string
+		BuildDate    string
+		BuildCommit  string
+	}{
+		BuildVersion: buildVersion,
+		BuildDate:    buildDate,
+		BuildCommit:  buildCommit,
+	}
+
+	err := t.Execute(os.Stdout, data)
+	if err != nil {
+		panic(err)
+	}
 
 	c, err := config.NewConfig()
 	if err != nil {
@@ -57,7 +87,8 @@ func main() {
 		s, err = db.NewPostgresStorage(ctx, c.DSN, l)
 		if err != nil {
 			l.Sugar.Infow("database connection error: ", err)
-			os.Exit(1)
+			return
+			//os.Exit(1)
 		}
 		defer s.Close()
 	}
@@ -76,7 +107,7 @@ func main() {
 			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
 			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN, "KEY", c.Key)
 			return next
-		}(routing.NewRouter(s, *c, l)),
+		}(router.NewRouter(s, *c, l)),
 	}
 
 	go server.ListenAndServe()
@@ -90,5 +121,5 @@ func main() {
 
 	server.Shutdown(context.Background())
 
-	os.Exit(0)
+	l.Sugar.Infow("The server has been shut down gracefully")
 }
