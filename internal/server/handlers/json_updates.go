@@ -28,6 +28,30 @@ var mPool = sync.Pool{
 func (h *Handlers) JSONUpdates(w http.ResponseWriter, r *http.Request) {
 	jMetrics := mPool.Get().(*[]models.Metrics)
 
+	// read body
+	// var body []byte
+	// _, err := r.Body.Read(body)
+	// if err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// decrypted body
+	// decryptedBody, err := cert.DecryptData(body, h.config.CryptoKey)
+	// if err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// unmarshal
+	// if err = json.Unmarshal(decryptedBody, &jMetrics); err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
 	if err := json.NewDecoder(r.Body).Decode(&jMetrics); err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
