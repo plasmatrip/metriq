@@ -121,7 +121,7 @@ func main() {
 	// start goroutine to send metrics to the server
 	// in a loop, it reads from a ticker and the context's Done channel
 	// when the context is canceled, the goroutine exits
-	// on each ticker event, it sends the collected metrics to the server
+	// on each ticker event, it sends the collected metrics to the server±~
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -129,7 +129,7 @@ func main() {
 		defer ticker.Stop()
 
 		for i := 0; i < cfg.RateLimit; i++ {
-			go controller.SendMetricsWorker(ctx, i)
+			go controller.SendMetricsWorker(ctx, &wg, i)
 		}
 
 		for {

@@ -31,3 +31,9 @@ cover.html
 backup.dat
 bin
 .DS_Store
+cmd/key-gen/cert.pem
+cmd/key-gen/key-gen
+cmd/key-gen/key.pem
+cmd/key-gen/certgen
+cmd/agent/cert.pem
+cmd/server/key.pem
