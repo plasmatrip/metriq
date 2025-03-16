@@ -12,6 +12,7 @@ package config
 
 import (
 	"crypto/rsa"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -36,6 +37,7 @@ const (
 )
 
 type Config struct {
+	ConfFile           string `env:"CONFIG"`          // путь к конфигурационному File
 	Host               string `env:"ADDRESS"`         // адрес сервера
 	PollInterval       int    `env:"POLL_INTERVAL"`   // интервал в сек обновления метрик
 	ReportInterval     int    `env:"REPORT_INTERVAL"` // интервал в сек отправки метрик на сервер
@@ -65,6 +67,9 @@ func NewConfig() (*Config, error) {
 	}
 
 	// проверяем флаги
+	var fConfig string
+	cl.StringVar(&fConfig, "c", "", "path to the configuration file")
+	cl.StringVar(&fConfig, "config", "", "path to the configuration file")
 
 	var fHost string
 	cl.StringVar(&fHost, "a", host+":"+port, "server address host:port")
@@ -87,6 +92,23 @@ func NewConfig() (*Config, error) {
 	// при ошибке парсинга прокидываем ошибку наверх
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
+	}
+
+	if _, exist := os.LookupEnv("CONFIG"); !exist {
+		cfg.ConfFile = fConfig
+	}
+
+	// читаем конфигурационный файл
+	if cfg.ConfFile != "" {
+		data, err := os.ReadFile(cfg.ConfFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+
+		err = json.Unmarshal(data, &cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal config file: %w", err)
+		}
 	}
 
 	if _, exist := os.LookupEnv("ADDRESS"); !exist {

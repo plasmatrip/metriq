@@ -49,7 +49,7 @@ const buildInfo = `
 // goroutine and runs until the context is canceled. If the context is canceled,
 // the backup function stops and the server is shut down.
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
 	t := template.Must(template.New("buildInfo").Parse(buildInfo))

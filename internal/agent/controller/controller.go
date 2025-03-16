@@ -9,6 +9,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
@@ -52,7 +53,10 @@ func NewController(repo storage.Repository, cfg config.Config) *Controller {
 // cancelled. It takes work from the Works channel, runs it, and sends the result
 // (if any) to the Results channel. The given idx is used to identify the worker
 // in log messages.
-func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
+func (c Controller) SendMetricsWorker(ctx context.Context, wg *sync.WaitGroup, idx int) {
+	wg.Add(1)
+	defer wg.Done()
+
 	for {
 		select {
 		case work := <-c.Works:
