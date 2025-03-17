@@ -1,0 +1,20 @@
+FROM golang:1.23.4 AS build-stage
+
+WORKDIR /app
+
+COPY ../go.mod ../go.sum ./
+RUN go mod download
+
+COPY ../. .
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/agent ./cmd/agent
+
+
+FROM debian:stable-slim
+
+WORKDIR /app
+
+COPY ./configs/agent.conf /app
+
+COPY --from=build-stage /app/bin/agent bin
+
+ENTRYPOINT ["./bin"]

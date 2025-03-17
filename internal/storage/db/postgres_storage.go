@@ -2,11 +2,15 @@ package db
 
 import (
 	"context"
+	"embed"
 	"errors"
+	"fmt"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/models"
@@ -19,6 +23,18 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage(ctx context.Context, dsn string, lg logger.Logger) (*PostgresStorage, error) {
+	// запускаем миграцию
+	err := startMigration(dsn)
+	if err != nil {
+		if !errors.Is(err, migrate.ErrNoChange) {
+			return nil, err
+		} else {
+			lg.Sugar.Debugw("the database exists, there is nothing to migrate")
+		}
+	} else {
+		lg.Sugar.Debugw("database migration was successful")
+	}
+
 	// открываем БД
 	db, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -30,22 +46,45 @@ func NewPostgresStorage(ctx context.Context, dsn string, lg logger.Logger) (*Pos
 		lg: lg,
 	}
 
-	// создаем таблицу, при ошибке прокидываем ее наверх
-	err = ps.createTables(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// // создаем таблицу, при ошибке прокидываем ее наверх
+	// err = ps.createTables(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return ps, nil
 }
 
-func (ps PostgresStorage) createTables(ctx context.Context) error {
-	_, err := ps.db.Exec(ctx, schema)
+//go:embed migrations/*.sql
+var migrationsDir embed.FS
+
+// StartMigration запускает миграцию
+func startMigration(dsn string) error {
+	d, err := iofs.New(migrationsDir, "migrations")
 	if err != nil {
+		return fmt.Errorf("failed to return an iofs driver: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", d, dsn)
+	if err != nil {
+		return fmt.Errorf("failed to get a new migrate instance: %w", err)
+	}
+	if err := m.Up(); err != nil {
+		if !errors.Is(err, migrate.ErrNoChange) {
+			return fmt.Errorf("failed to apply migrations to the DB: %w", err)
+		}
 		return err
 	}
 	return nil
 }
+
+// func (ps PostgresStorage) createTables(ctx context.Context) error {
+// 	_, err := ps.db.Exec(ctx, schema)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 func (ps PostgresStorage) Ping(ctx context.Context) error {
 	return ps.db.Ping(ctx)

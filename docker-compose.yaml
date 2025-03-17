@@ -1,0 +1,72 @@
+services:
+  database:
+    container_name: postgres_db
+    image: postgres:17.2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metriq -d metriq"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: "/var/lib/postgresql/data"
+    volumes:
+      - "./internal/storage/db/init:/docker-entrypoint-initdb.d"
+      - "metriq_vol:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
+    networks:
+      - metriq_net
+    restart: always
+
+  server:
+    container_name: metriq_server
+    build:
+      context: .
+      dockerfile: build/Dockerfile_server
+      tags:
+        - "metriq_server:v.1"
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+    environment:
+      ADDRESS: "0.0.0.0:8080"
+      DATABASE_DSN: "postgres://metriq:password@postgres_db:5432/metriq?sslmode=disable"
+      # STORE_INTERVAL: "1"
+      # FILE_STORAGE_PATH: "backup.dat"
+      # RESTORE: true
+      # KEY: "SeCrE7K3Y"
+      # CRYPTO_KEY: "key.pem"
+    networks:
+      - metriq_net
+    restart: always
+
+  agent:
+    container_name: metriq_agent
+    build:
+      context: .
+      dockerfile: build/Dockerfile_agent
+      tags:
+        - "metriq_agent:v.1"
+    # ports:
+    #   - 8081:8080
+    environment:
+      ADDRESS: "metriq_server:8080"
+      # REPORT_INTERVAL: "1"
+      # POLL_INTERVAK: "1"
+      # CRYPTO_KEY: "cert.pem"
+    networks:
+      - metriq_net
+    restart: always
+
+volumes:
+  metriq_vol:
+
+networks:
+  metriq_net:
+    driver: bridge
