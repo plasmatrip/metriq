@@ -9,9 +9,11 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
+	"github.com/plasmatrip/metriq/internal/agent/cert"
 	"github.com/plasmatrip/metriq/internal/agent/compress"
 	"github.com/plasmatrip/metriq/internal/agent/config"
 	"github.com/plasmatrip/metriq/internal/models"
@@ -51,7 +53,10 @@ func NewController(repo storage.Repository, cfg config.Config) *Controller {
 // cancelled. It takes work from the Works channel, runs it, and sends the result
 // (if any) to the Results channel. The given idx is used to identify the worker
 // in log messages.
-func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
+func (c Controller) SendMetricsWorker(ctx context.Context, wg *sync.WaitGroup, idx int) {
+	wg.Add(1)
+	defer wg.Done()
+
 	for {
 		select {
 		case work := <-c.Works:
@@ -76,7 +81,6 @@ func (c Controller) SendMetricsWorker(ctx context.Context, idx int) {
 // present in the configuration, it hashes the request body before sending. Returns
 // an error if any step fails, or nil if the operation succeeds.
 func (c Controller) SendMetricsBatch() error {
-
 	metrics, err := c.Repo.Metrics(context.Background())
 	if len(metrics) == 0 {
 		return nil
@@ -86,21 +90,33 @@ func (c Controller) SendMetricsBatch() error {
 		return err
 	}
 
+	// convert metrics
 	sMetrics := make([]models.Metrics, 0, len(metrics))
 	for mName, metric := range metrics {
 		sMetrics = append(sMetrics, metric.Convert(mName))
 	}
 
+	// marshal data
 	data, err := json.Marshal(sMetrics)
 	if err != nil {
 		return err
 	}
 
+	// compress data
 	data, err = compress.Compress(data)
 	if err != nil {
 		return err
 	}
 
+	// encrypt data
+	if c.cfg.CryptoKey != nil {
+		data, err = cert.EncryptData(data, c.cfg.CryptoKey)
+		if err != nil {
+			return err
+		}
+	}
+
+	// create request
 	req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/updates", bytes.NewReader(data))
 	if err != nil {
 		return err
@@ -157,11 +173,21 @@ func (c Controller) SendMetrics() error {
 			return err
 		}
 
+		// compress data
 		data, err = compress.Compress(data)
 		if err != nil {
 			return err
 		}
 
+		// encrypt data
+		if c.cfg.CryptoKey != nil {
+			data, err = cert.EncryptData(data, c.cfg.CryptoKey)
+			if err != nil {
+				return err
+			}
+		}
+
+		// create request
 		req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/update", bytes.NewReader(data))
 		if err != nil {
 			return err

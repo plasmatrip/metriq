@@ -19,6 +19,10 @@ func NewRouter(s storage.Repository, c config.Config, l logger.Logger) *chi.Mux 
 		r.Use(h.WithHashing)
 	}
 
+	if c.CryptoKey != nil {
+		r.Use(h.WithDecryption)
+	}
+
 	r.Use(compress.WithCompression(l), l.WithLogging)
 
 	r.Mount("/debug", middleware.Profiler())

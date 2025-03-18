@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/rsa"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/caarlos0/env"
+	"github.com/plasmatrip/metriq/internal/server/cert"
 )
 
 const (
@@ -23,12 +26,15 @@ const (
 )
 
 type Config struct {
-	Host               string        `env:"ADDRESS"`
-	StoreInterval      int           `env:"STORE_INTERVAL"`
-	FileStoragePath    string        `env:"FILE_STORAGE_PATH"`
-	Restore            bool          `env:"RESTORE"`
-	DSN                string        `env:"DATABASE_DSN"`
-	Key                string        `env:"KEY"` // ключ для вычисления хэша по SHA256
+	ConfFile           string `env:"CONFIG"`            // путь к конфигурационному File
+	Host               string `env:"ADDRESS"`           // адрес сервера
+	StoreInterval      int    `env:"STORE_INTERVAL"`    // интервал сохранения метрик
+	FileStoragePath    string `env:"FILE_STORAGE_PATH"` // путь к файлу c метриками
+	Restore            bool   `env:"RESTORE"`           // загружать ли сохраненные метрики
+	DSN                string `env:"DATABASE_DSN"`      // подключение к бд
+	Key                string `env:"KEY"`               // ключ для вычисления хэша по SHA256
+	CryptoKeyPath      string `env:"CRYPTO_KEY"`        // путь к секретному ключу
+	CryptoKey          *rsa.PrivateKey
 	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторного коннекта с бд
 	StartRetryInterval time.Duration // начиниаем повторную попытку коннекта с бд через сек
 	MaxRetries         int           // максимальное количество попыток повторного коннекта с бд
@@ -48,6 +54,10 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
+	var fConfig string
+	cl.StringVar(&fConfig, "c", "", "path to the configuration file")
+	cl.StringVar(&fConfig, "config", "", "path to the configuration file")
+
 	var fHost string
 	cl.StringVar(&fHost, "a", host+":"+port, "server address host:port")
 
@@ -66,8 +76,28 @@ func NewConfig() (*Config, error) {
 	var fKey string
 	cl.StringVar(&fKey, "k", "", "the key for calculating the hash using the SHA256 algorithm")
 
+	var fCryptoKeyPath string
+	cl.StringVar(&fCryptoKeyPath, "crypto-key", "", "the key for encrypting metrics")
+
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
+	}
+
+	if _, exist := os.LookupEnv("CONFIG"); !exist {
+		cfg.ConfFile = fConfig
+	}
+
+	// читаем конфигурационный файл
+	if cfg.ConfFile != "" {
+		data, err := os.ReadFile(cfg.ConfFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+
+		err = json.Unmarshal(data, &cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal config file: %w", err)
+		}
 	}
 
 	if _, exist := os.LookupEnv("ADDRESS"); !exist {
@@ -92,6 +122,18 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("KEY"); !exist {
 		cfg.Key = fKey
+	}
+
+	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist {
+		cfg.CryptoKeyPath = fCryptoKeyPath
+	}
+
+	if cfg.CryptoKey != nil {
+		var err error
+		cfg.CryptoKey, err = cert.LoadPrivateKey(cfg.CryptoKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get public key from cert: %w", err)
+		}
 	}
 
 	if err := parseAddress(cfg); err != nil {

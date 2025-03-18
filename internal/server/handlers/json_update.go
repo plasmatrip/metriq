@@ -17,6 +17,30 @@ import (
 func (h *Handlers) JSONUpdate(w http.ResponseWriter, r *http.Request) {
 	var jMetric models.Metrics
 
+	// read body
+	// var body []byte
+	// _, err := r.Body.Read(body)
+	// if err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// // decrypted body
+	// decryptedBody, err := cert.DecryptData(body, h.config.CryptoKey)
+	// if err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// // unmarshal
+	// if err = json.Unmarshal(decryptedBody, &jMetric); err != nil {
+	// 	h.lg.Sugar.Infow("error in request handler", "error: ", err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
 	if err := json.NewDecoder(r.Body).Decode(&jMetric); err != nil {
 		h.lg.Sugar.Infow("error in request handler", "error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -36,12 +60,6 @@ func (h *Handlers) JSONUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the name of the metric is empty", http.StatusNotFound)
 		return
 	}
-	// _, err := h.Repo.Metric(r.Context(), jMetric.ID)
-	// if err != nil {
-	// 	h.lg.Sugar.Infow("error in request handler", "error: ", "metric not found")
-	// 	http.Error(w, "metric not found", http.StatusNotFound)
-	// 	return
-	// }
 
 	var value any
 	switch jMetric.MType {
