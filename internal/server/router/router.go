@@ -15,6 +15,10 @@ func NewRouter(s storage.Repository, c config.Config, l logger.Logger) *chi.Mux 
 
 	r := chi.NewRouter()
 
+	if c.TrustedSubnet != "" {
+		r.Use(h.WithIPCheck)
+	}
+
 	if c.Key != "" {
 		r.Use(h.WithHashing)
 	}

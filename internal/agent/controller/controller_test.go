@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +14,7 @@ import (
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 	"github.com/plasmatrip/metriq/internal/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type MockStorage struct {
@@ -28,6 +31,18 @@ func NewMockStorage() *MockStorage {
 }
 
 func TestService_SendMetrics(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	var localIP *net.IPNet
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				localIP = ipnet
+				break
+			}
+		}
+	}
+
 	ctx := context.Background()
 	mock := NewMockStorage()
 	mock.SetMetric(ctx, "metric", types.Metric{MetricType: types.Gauge, Value: 100})
@@ -40,8 +55,10 @@ func TestService_SendMetrics(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	controller := NewController(mock, config.Config{Host: strings.Split(server.URL, "//")[1]})
+	controller := NewController(mock, config.Config{Host: strings.Split(server.URL, "//")[1], LocalIP: localIP})
 	controller.Client = *server.Client()
+
+	fmt.Printf("%+v", controller.cfg)
 
 	t.Run("Send metrics test", func(t *testing.T) {
 		err := controller.SendMetrics()

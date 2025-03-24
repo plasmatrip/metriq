@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net"
 	"os"
 	"testing"
 
@@ -51,6 +52,18 @@ func TestConfig_Agent_ParseAddress(t *testing.T) {
 }
 
 func TestConfig_Agent_NewConfig_env(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	var localIP *net.IPNet
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				localIP = ipnet
+				break
+			}
+		}
+	}
+
 	tests := []struct {
 		name    string
 		env     map[string]string
@@ -71,6 +84,7 @@ func TestConfig_Agent_NewConfig_env(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -88,6 +102,7 @@ func TestConfig_Agent_NewConfig_env(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -106,6 +121,7 @@ func TestConfig_Agent_NewConfig_env(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -150,6 +166,18 @@ func TestConfig_Agent_NewConfig_env(t *testing.T) {
 }
 
 func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	var localIP *net.IPNet
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				localIP = ipnet
+				break
+			}
+		}
+	}
+
 	tests := []struct {
 		name    string
 		args    []string
@@ -169,6 +197,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -184,6 +213,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -201,6 +231,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -218,6 +249,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -235,6 +267,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -252,6 +285,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -269,6 +303,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -286,6 +321,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -303,6 +339,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -320,6 +357,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -337,6 +375,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
@@ -354,6 +393,7 @@ func TestConfig_Agent_NewConfig_Flags(t *testing.T) {
 				MaxRetries:         3,
 				CryptoKeyPath:      "",
 				CryptoKey:          nil,
+				LocalIP:            localIP,
 			},
 			errWant: false,
 		},
