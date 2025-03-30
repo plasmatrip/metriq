@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -23,6 +22,8 @@ import (
 
 	"github.com/plasmatrip/metriq/internal/agent/config"
 	"github.com/plasmatrip/metriq/internal/agent/controller"
+	"github.com/plasmatrip/metriq/internal/agent/grpc"
+	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
 )
 
@@ -67,11 +68,30 @@ func main() {
 		panic(err)
 	}
 
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	defer log.Close()
+
+	stor := mem.NewStorage()
+
 	cfg, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
-	controller := controller.NewController(mem.NewStorage(), *cfg)
+	controller := controller.NewController(stor, *cfg)
+
+	var grpcClient *grpc.GRPCClient
+	if cfg.EnableGRPC {
+		grpcClient, err = grpc.NewGRPCClient(cfg.GRPCPort, stor, *cfg, log)
+		if err != nil {
+			log.Sugar.Errorw("failed to create grpc client", "error", err)
+			return
+		}
+		log.Sugar.Infow("grpc client created", "port", cfg.GRPCPort)
+		defer grpcClient.Close()
+	}
 
 	var wg sync.WaitGroup
 
@@ -110,7 +130,7 @@ func main() {
 			case <-ticker.C:
 				err := controller.UpdatePSMetrics(ctx)
 				if err != nil {
-					fmt.Println("error while collecting system utilization metrics using gopsutil: ", err)
+					log.Sugar.Errorw("error while collecting system utilization metrics using gopsutil", "error", err)
 				}
 			case <-ctx.Done():
 				return
@@ -135,10 +155,14 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				controller.Works <- controller.SendMetricsBatch
+				if grpcClient != nil {
+					controller.Works <- grpcClient.SendMetrics
+				} else {
+					controller.Works <- controller.SendMetricsBatch
+				}
 			case result := <-controller.Results:
 				if result.Err != nil {
-					fmt.Println("error sending metrics to server: ", result.Err)
+					log.Sugar.Errorw("error sending metrics to server", "error", result.Err)
 				}
 			case <-ctx.Done():
 				return
@@ -146,10 +170,8 @@ func main() {
 		}
 	}()
 
-	fmt.Printf(`The metrics collection agent is running.
-The interval for collecting metrics is %d seconds, the interval for transmitting metrics to the server is %d seconds.
-Server address: %s
-`, cfg.PollInterval, cfg.ReportInterval, cfg.Host)
+	log.Sugar.Info("The metrics collection agent has started")
+	log.Sugar.Infow("Agent config", "poll interval", cfg.PollInterval, "report interval", cfg.ReportInterval, "server address", cfg.Host)
 
 	// wait for the context to be canceled
 	<-ctx.Done()
@@ -157,7 +179,5 @@ Server address: %s
 	// wait for all goroutines to finish and exit the program
 	wg.Wait()
 
-	fmt.Println("The agent has been shut down gracefully")
-
-	// os.Exit(0)
+	log.Sugar.Info("The agent has been shut down gracefully")
 }

@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -15,13 +16,17 @@ import (
 	"syscall"
 	"text/template"
 
+	"google.golang.org/grpc"
+
 	"github.com/plasmatrip/metriq/internal/backup"
 	"github.com/plasmatrip/metriq/internal/logger"
 	"github.com/plasmatrip/metriq/internal/server/config"
+	srv "github.com/plasmatrip/metriq/internal/server/grpc"
 	"github.com/plasmatrip/metriq/internal/server/router"
 	"github.com/plasmatrip/metriq/internal/storage"
 	"github.com/plasmatrip/metriq/internal/storage/db"
 	"github.com/plasmatrip/metriq/internal/storage/mem"
+	pb "github.com/plasmatrip/metriq/proto"
 )
 
 var buildVersion string
@@ -53,7 +58,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
-	t := template.Must(template.New("buildInfo").Parse(buildInfo))
+	templ := template.Must(template.New("buildInfo").Parse(buildInfo))
 
 	data := struct {
 		BuildVersion string
@@ -65,50 +70,65 @@ func main() {
 		BuildCommit:  buildCommit,
 	}
 
-	err := t.Execute(os.Stdout, data)
+	err := templ.Execute(os.Stdout, data)
 	if err != nil {
 		panic(err)
 	}
 
-	c, err := config.NewConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	l, err := logger.NewLogger()
+	log, err := logger.NewLogger()
 	if err != nil {
 		panic(err)
 	}
-	defer l.Close()
+	defer log.Close()
 
-	var s storage.Repository
-	if c.DSN == "" {
-		s = mem.NewStorage()
+	var stor storage.Repository
+	if cfg.DSN == "" {
+		stor = mem.NewStorage()
 	} else {
-		s, err = db.NewPostgresStorage(ctx, c.DSN, l)
+		stor, err = db.NewPostgresStorage(ctx, cfg.DSN, log)
 		if err != nil {
-			l.Sugar.Infow("database connection error: ", err)
+			log.Sugar.Infow("database connection error: ", err)
 			return
-			//os.Exit(1)
 		}
-		defer s.Close()
+		defer stor.Close()
 	}
 
-	backup, err := backup.NewBackup(*c, s, l)
+	backup, err := backup.NewBackup(*cfg, stor, log)
 	if err != nil {
-		l.Sugar.Panic("error initializing backup: ", err, " ", c.FileStoragePath)
+		log.Sugar.Panic("error initializing backup: ", err, " ", cfg.FileStoragePath)
 	}
-	if c.DSN == "" {
+	if cfg.DSN == "" {
 		backup.Start(ctx)
 	}
 
+	var grpcServer *grpc.Server
+	if cfg.EnableGRPC {
+		listen, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+		if err != nil {
+			log.Sugar.Panic("failed to listen: ", err)
+		}
+		grpcServer = grpc.NewServer()
+		pb.RegisterMetricsServer(grpcServer, srv.NewGRPCServer(stor, *cfg, log))
+		log.Sugar.Infow("The gRPC server is running. ", "Server address: ", cfg.GRPCPort)
+		go func() {
+			if errGrpc := grpcServer.Serve(listen); errGrpc != nil {
+				log.Sugar.Info("Could not listen on tcp:"+cfg.GRPCPort+": ", errGrpc)
+			}
+		}()
+	}
+
 	server := http.Server{
-		Addr: c.Host,
+		Addr: cfg.Host,
 		Handler: func(next http.Handler) http.Handler {
-			l.Sugar.Infow("The metrics collection server is running. ", "Server address: ", c.Host)
-			l.Sugar.Infow("Server config", "store interval", c.StoreInterval, "backup file", c.FileStoragePath, "DSN", c.DSN, "KEY", c.Key)
+			log.Sugar.Infow("The metrics collection server is running. ", "Server address: ", cfg.Host)
+			log.Sugar.Infow("Server config", "store interval", cfg.StoreInterval, "backup file", cfg.FileStoragePath, "DSN", cfg.DSN, "KEY", cfg.Key)
 			return next
-		}(router.NewRouter(s, *c, l)),
+		}(router.NewRouter(stor, *cfg, log)),
 	}
 
 	go server.ListenAndServe()
@@ -118,10 +138,14 @@ func main() {
 
 	err = backup.Save()
 	if err != nil {
-		l.Sugar.Infow("error saving to backup: ", err, " ", c.FileStoragePath)
+		log.Sugar.Infow("error saving to backup: ", err, " ", cfg.FileStoragePath)
 	}
 
 	server.Shutdown(context.Background())
 
-	l.Sugar.Infow("The server has been shut down gracefully")
+	if grpcServer != nil {
+		grpcServer.GracefulStop()
+	}
+
+	log.Sugar.Infow("The server has been shut down gracefully")
 }

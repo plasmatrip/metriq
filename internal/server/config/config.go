@@ -24,9 +24,13 @@ const (
 	retryInterval      = time.Second * 2
 	startRetryInterval = time.Second * 1
 	maxRetries         = 3
+	enableGRPC         = false
+	grpcPort           = "3200"
 )
 
 type Config struct {
+	EnableGRPC         bool            `env:"ENABLE_GRPC" json:"enable_grpc"`       // включить grpc сервер
+	GRPCPort           string          `env:"GRPC_PORT" json:"grpc_port"`           // порт grpc
 	ConfFile           string          `env:"CONFIG"`                               // путь к конфигурационному File
 	Host               string          `env:"ADDRESS" json:"address"`               // адрес сервера
 	StoreInterval      int             `env:"STORE_INTERVAL" json:"store_interval"` // интервал сохранения метрик
@@ -78,6 +82,12 @@ func NewConfig() (*Config, error) {
 
 	var fKey string
 	cl.StringVar(&fKey, "k", "", "the key for calculating the hash using the SHA256 algorithm")
+
+	var fEnableGRPC bool
+	cl.BoolVar(&fEnableGRPC, "grpc", enableGRPC, "enable grpc server")
+
+	var fGrpcPort string
+	cl.StringVar(&fGrpcPort, "grpc-port", grpcPort, "grpc server port")
 
 	var fCryptoKeyPath string
 	cl.StringVar(&fCryptoKeyPath, "crypto-key", "", "the key for encrypting metrics")
@@ -136,6 +146,14 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("TRUSTED_SUBNET"); !exist && fTrustedSubnet != "" {
 		cfg.TrustedSubnet = fTrustedSubnet
+	}
+
+	if _, exist := os.LookupEnv("ENABLE_GRPC"); !exist && fEnableGRPC {
+		cfg.EnableGRPC = fEnableGRPC
+	}
+
+	if _, exist := os.LookupEnv("GRPC_PORT"); !exist && fGrpcPort != "" {
+		cfg.GRPCPort = fGrpcPort
 	}
 
 	if cfg.TrustedSubnet != "" {

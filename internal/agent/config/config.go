@@ -35,9 +35,13 @@ const (
 	startRetryInterval = time.Second * 1
 	maxRetries         = 3
 	rateLimit          = 5
+	enableGRPC         = false
+	grpcPort           = "3200"
 )
 
 type Config struct {
+	EnableGRPC         bool           `env:"ENABLE_GRPC" json:"enable_grpc"`         // включение grpc
+	GRPCPort           string         `env:"GRPC_PORT" json:"grpc_port"`             // порт grpc
 	ConfFile           string         `env:"CONFIG"`                                 // путь к конфигурационному File
 	Host               string         `env:"ADDRESS" json:"address"`                 // адрес сервера
 	PollInterval       int            `env:"POLL_INTERVAL" json:"poll_interval"`     // интервал в сек обновления метрик
@@ -105,6 +109,12 @@ func NewConfig() (*Config, error) {
 	var fCryptoKeyPath string
 	cl.StringVar(&fCryptoKeyPath, "crypto-key", "", "the key for encrypting metrics")
 
+	var fEnableGRPC bool
+	cl.BoolVar(&fEnableGRPC, "grpc", enableGRPC, "enable grpc")
+
+	var fGRPCPort string
+	cl.StringVar(&fGRPCPort, "grpc-port", grpcPort, "grpc port")
+
 	// при ошибке парсинга прокидываем ошибку наверх
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
@@ -149,6 +159,14 @@ func NewConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist && fCryptoKeyPath != "" {
 		cfg.CryptoKeyPath = fCryptoKeyPath
+	}
+
+	if _, exist := os.LookupEnv("ENABLE_GRPC"); !exist {
+		cfg.EnableGRPC = fEnableGRPC
+	}
+
+	if _, exist := os.LookupEnv("GRPC_PORT"); !exist {
+		cfg.GRPCPort = fGRPCPort
 	}
 
 	if cfg.CryptoKeyPath != "" {

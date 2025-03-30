@@ -20,7 +20,7 @@ import (
 )
 
 var mPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return &[]models.Metrics{}
 	},
 }
