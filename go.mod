@@ -1,6 +1,6 @@
 module github.com/plasmatrip/metriq
 
-go 1.23
+go 1.22.12
 
 toolchain go1.23.4
 
