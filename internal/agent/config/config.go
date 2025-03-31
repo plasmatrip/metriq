@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -34,21 +35,26 @@ const (
 	startRetryInterval = time.Second * 1
 	maxRetries         = 3
 	rateLimit          = 5
+	enableGRPC         = false
+	grpcPort           = "3200"
 )
 
 type Config struct {
-	ConfFile           string `env:"CONFIG"`          // путь к конфигурационному File
-	Host               string `env:"ADDRESS"`         // адрес сервера
-	PollInterval       int    `env:"POLL_INTERVAL"`   // интервал в сек обновления метрик
-	ReportInterval     int    `env:"REPORT_INTERVAL"` // интервал в сек отправки метрик на сервер
-	Key                string `env:"KEY"`             // ключ для вычисления хэша по SHA256
-	RateLimit          int    `env:"RATE_LIMIT"`      // количество одновременно исходящих запросов на сервер
-	CryptoKeyPath      string `env:"CRYPTO_KEY"`      // ауть к сертификату
-	CryptoKey          *rsa.PublicKey
-	ClientTimeout      time.Duration // таймаут для http клиента
-	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторной отправки метрик на сервер
-	StartRetryInterval time.Duration // начиниаем повторную отправку через сек
-	MaxRetries         int           // максимальное количество попыток повторной отправки метрик на сервер
+	EnableGRPC         bool           `env:"ENABLE_GRPC" json:"enable_grpc"`         // включение grpc
+	GRPCPort           string         `env:"GRPC_PORT" json:"grpc_port"`             // порт grpc
+	ConfFile           string         `env:"CONFIG"`                                 // путь к конфигурационному File
+	Host               string         `env:"ADDRESS" json:"address"`                 // адрес сервера
+	PollInterval       int            `env:"POLL_INTERVAL" json:"poll_interval"`     // интервал в сек обновления метрик
+	ReportInterval     int            `env:"REPORT_INTERVAL" json:"report_interval"` // интервал в сек отправки метрик на сервер
+	Key                string         `env:"KEY"`                                    // ключ для вычисления хэша по SHA256
+	RateLimit          int            `env:"RATE_LIMIT"`                             // количество одновременно исходящих запросов на сервер
+	CryptoKeyPath      string         `env:"CRYPTO_KEY" json:"crypto_key"`           // путь к сертификату
+	CryptoKey          *rsa.PublicKey // публичная часть сертификата
+	ClientTimeout      time.Duration  // таймаут для http клиента
+	RetryInterval      time.Duration  // увеличиваем интервал в сек между попытками повторной отправки метрик на сервер
+	StartRetryInterval time.Duration  // начиниаем повторную отправку через сек
+	MaxRetries         int            // максимальное количество попыток повторной отправки метрик на сервер
+	LocalIP            *net.IPNet     // локальный ip
 }
 
 func NewConfig() (*Config, error) {
@@ -57,6 +63,20 @@ func NewConfig() (*Config, error) {
 		RetryInterval:      retryInterval,
 		StartRetryInterval: startRetryInterval,
 		MaxRetries:         maxRetries,
+	}
+
+	// определяем локальный ip
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				cfg.LocalIP = ipnet
+				break
+			}
+		}
 	}
 
 	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
@@ -89,6 +109,12 @@ func NewConfig() (*Config, error) {
 	var fCryptoKeyPath string
 	cl.StringVar(&fCryptoKeyPath, "crypto-key", "", "the key for encrypting metrics")
 
+	var fEnableGRPC bool
+	cl.BoolVar(&fEnableGRPC, "grpc", enableGRPC, "enable grpc")
+
+	var fGRPCPort string
+	cl.StringVar(&fGRPCPort, "grpc-port", grpcPort, "grpc port")
+
 	// при ошибке парсинга прокидываем ошибку наверх
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
@@ -111,15 +137,15 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	if _, exist := os.LookupEnv("ADDRESS"); !exist {
+	if _, exist := os.LookupEnv("ADDRESS"); !exist && fHost != "" {
 		cfg.Host = fHost
 	}
 
-	if _, exist := os.LookupEnv("POLL_INTERVAL"); !exist {
+	if _, exist := os.LookupEnv("POLL_INTERVAL"); !exist && fPollInterval != 0 {
 		cfg.PollInterval = fPollInterval
 	}
 
-	if _, exist := os.LookupEnv("REPORT_INTERVAL"); !exist {
+	if _, exist := os.LookupEnv("REPORT_INTERVAL"); !exist && fReportInterval != 0 {
 		cfg.ReportInterval = fReportInterval
 	}
 
@@ -131,11 +157,19 @@ func NewConfig() (*Config, error) {
 		cfg.RateLimit = fRateLimit
 	}
 
-	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist {
+	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist && fCryptoKeyPath != "" {
 		cfg.CryptoKeyPath = fCryptoKeyPath
 	}
 
-	if cfg.CryptoKey != nil {
+	if _, exist := os.LookupEnv("ENABLE_GRPC"); !exist {
+		cfg.EnableGRPC = fEnableGRPC
+	}
+
+	if _, exist := os.LookupEnv("GRPC_PORT"); !exist {
+		cfg.GRPCPort = fGRPCPort
+	}
+
+	if cfg.CryptoKeyPath != "" {
 		var err error
 		cfg.CryptoKey, err = cert.GetPublicKeyFromCert(cfg.CryptoKeyPath)
 		if err != nil {

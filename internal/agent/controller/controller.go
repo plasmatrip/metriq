@@ -102,42 +102,9 @@ func (c Controller) SendMetricsBatch() error {
 		return err
 	}
 
-	// compress data
-	data, err = compress.Compress(data)
+	req, err := c.prepareRequest(data)
 	if err != nil {
 		return err
-	}
-
-	// encrypt data
-	if c.cfg.CryptoKey != nil {
-		data, err = cert.EncryptData(data, c.cfg.CryptoKey)
-		if err != nil {
-			return err
-		}
-	}
-
-	// create request
-	req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/updates", bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Content-Encoding", "application/gzip")
-
-	// if there is a key, hash the request body
-	if len(c.cfg.Key) > 0 {
-		copyBody, err := req.GetBody()
-		if err != nil {
-			return err
-		}
-
-		hash, err := c.Sum(copyBody)
-		if err != nil {
-			return err
-		}
-
-		req.Header.Set("HashSHA256", hash)
 	}
 
 	// in a loop, try to send metrics to the server
@@ -173,28 +140,10 @@ func (c Controller) SendMetrics() error {
 			return err
 		}
 
-		// compress data
-		data, err = compress.Compress(data)
+		req, err := c.prepareRequest(data)
 		if err != nil {
 			return err
 		}
-
-		// encrypt data
-		if c.cfg.CryptoKey != nil {
-			data, err = cert.EncryptData(data, c.cfg.CryptoKey)
-			if err != nil {
-				return err
-			}
-		}
-
-		// create request
-		req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/update", bytes.NewReader(data))
-		if err != nil {
-			return err
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Content-Encoding", "application/gzip")
 
 		resp, err := c.Client.Do(req)
 		if err != nil {
@@ -203,6 +152,49 @@ func (c Controller) SendMetrics() error {
 		defer resp.Body.Close()
 	}
 	return nil
+}
+
+func (c Controller) prepareRequest(data []byte) (*http.Request, error) {
+	// compress data
+	data, err := compress.Compress(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// encrypt data
+	if c.cfg.CryptoKey != nil {
+		data, err = cert.EncryptData(data, c.cfg.CryptoKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// create request
+	req, err := http.NewRequest(http.MethodPost, "http://"+c.cfg.Host+"/updates", bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "application/gzip")
+	req.Header.Set("X-Real-IP", c.cfg.LocalIP.IP.String())
+
+	// if there is a key, hash the request body
+	if len(c.cfg.Key) > 0 {
+		copyBody, err := req.GetBody()
+		if err != nil {
+			return nil, err
+		}
+
+		hash, err := c.Sum(copyBody)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("HashSHA256", hash)
+	}
+
+	return req, nil
 }
 
 func (c Controller) UpdateMetrics(ctx context.Context) {

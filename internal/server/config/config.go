@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -23,21 +24,27 @@ const (
 	retryInterval      = time.Second * 2
 	startRetryInterval = time.Second * 1
 	maxRetries         = 3
+	enableGRPC         = false
+	grpcPort           = "3200"
 )
 
 type Config struct {
-	ConfFile           string `env:"CONFIG"`            // путь к конфигурационному File
-	Host               string `env:"ADDRESS"`           // адрес сервера
-	StoreInterval      int    `env:"STORE_INTERVAL"`    // интервал сохранения метрик
-	FileStoragePath    string `env:"FILE_STORAGE_PATH"` // путь к файлу c метриками
-	Restore            bool   `env:"RESTORE"`           // загружать ли сохраненные метрики
-	DSN                string `env:"DATABASE_DSN"`      // подключение к бд
-	Key                string `env:"KEY"`               // ключ для вычисления хэша по SHA256
-	CryptoKeyPath      string `env:"CRYPTO_KEY"`        // путь к секретному ключу
-	CryptoKey          *rsa.PrivateKey
-	RetryInterval      time.Duration // увеличиваем интервал в сек между попытками повторного коннекта с бд
-	StartRetryInterval time.Duration // начиниаем повторную попытку коннекта с бд через сек
-	MaxRetries         int           // максимальное количество попыток повторного коннекта с бд
+	EnableGRPC         bool            `env:"ENABLE_GRPC" json:"enable_grpc"`       // включить grpc сервер
+	GRPCPort           string          `env:"GRPC_PORT" json:"grpc_port"`           // порт grpc
+	ConfFile           string          `env:"CONFIG"`                               // путь к конфигурационному File
+	Host               string          `env:"ADDRESS" json:"address"`               // адрес сервера
+	StoreInterval      int             `env:"STORE_INTERVAL" json:"store_interval"` // интервал сохранения метрик
+	FileStoragePath    string          `env:"FILE_STORAGE_PATH" json:"store_file"`  // путь к файлу c метриками
+	Restore            bool            `env:"RESTORE" json:"restore"`               // загружать ли сохраненные метрики
+	DSN                string          `env:"DATABASE_DSN" json:"database_dsn"`     // подключение к бд
+	Key                string          `env:"KEY"`                                  // ключ для вычисления хэша по SHA256
+	CryptoKeyPath      string          `env:"CRYPTO_KEY" json:"crypto_key"`         // путь к секретному ключу
+	TrustedSubnet      string          `env:"TRUSTED_SUBNET" json:"trusted_subnet"` // сеть с которой разрешен доступ
+	TrustedSubnetCIDR  *net.IPNet      // сеть с которой разрешен доступ
+	CryptoKey          *rsa.PrivateKey // секретный ключ
+	RetryInterval      time.Duration   // увеличиваем интервал в сек между попытками повторного коннекта с бд
+	StartRetryInterval time.Duration   // начиниаем повторную попытку коннекта с бд через сек
+	MaxRetries         int             // максимальное количество попыток повторного коннекта с бд
 }
 
 func NewConfig() (*Config, error) {
@@ -76,8 +83,17 @@ func NewConfig() (*Config, error) {
 	var fKey string
 	cl.StringVar(&fKey, "k", "", "the key for calculating the hash using the SHA256 algorithm")
 
+	var fEnableGRPC bool
+	cl.BoolVar(&fEnableGRPC, "grpc", enableGRPC, "enable grpc server")
+
+	var fGrpcPort string
+	cl.StringVar(&fGrpcPort, "grpc-port", grpcPort, "grpc server port")
+
 	var fCryptoKeyPath string
 	cl.StringVar(&fCryptoKeyPath, "crypto-key", "", "the key for encrypting metrics")
+
+	var fTrustedSubnet string
+	cl.StringVar(&fTrustedSubnet, "t", "", "the subnet from which access is allowed")
 
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
@@ -100,23 +116,23 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	if _, exist := os.LookupEnv("ADDRESS"); !exist {
+	if _, exist := os.LookupEnv("ADDRESS"); !exist && fHost != "" {
 		cfg.Host = fHost
 	}
 
-	if _, exist := os.LookupEnv("STORE_INTERVAL"); !exist {
+	if _, exist := os.LookupEnv("STORE_INTERVAL"); !exist && fStoreInterval != 0 {
 		cfg.StoreInterval = fStoreInterval
 	}
 
-	if _, exist := os.LookupEnv("FILE_STORAGE_PATH"); !exist {
+	if _, exist := os.LookupEnv("FILE_STORAGE_PATH"); !exist && fFileStoragePath != "" {
 		cfg.FileStoragePath = fFileStoragePath
 	}
 
-	if _, exist := os.LookupEnv("RESTORE"); !exist {
+	if _, exist := os.LookupEnv("RESTORE"); !exist && fRestore {
 		cfg.Restore = fRestore
 	}
 
-	if _, exist := os.LookupEnv("DATABASE_DSN"); !exist {
+	if _, exist := os.LookupEnv("DATABASE_DSN"); !exist && fDSN != "" {
 		cfg.DSN = fDSN
 	}
 
@@ -124,11 +140,31 @@ func NewConfig() (*Config, error) {
 		cfg.Key = fKey
 	}
 
-	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist {
+	if _, exist := os.LookupEnv("CRYPTO_KEY"); !exist && fCryptoKeyPath != "" {
 		cfg.CryptoKeyPath = fCryptoKeyPath
 	}
 
-	if cfg.CryptoKey != nil {
+	if _, exist := os.LookupEnv("TRUSTED_SUBNET"); !exist && fTrustedSubnet != "" {
+		cfg.TrustedSubnet = fTrustedSubnet
+	}
+
+	if _, exist := os.LookupEnv("ENABLE_GRPC"); !exist && fEnableGRPC {
+		cfg.EnableGRPC = fEnableGRPC
+	}
+
+	if _, exist := os.LookupEnv("GRPC_PORT"); !exist && fGrpcPort != "" {
+		cfg.GRPCPort = fGrpcPort
+	}
+
+	if cfg.TrustedSubnet != "" {
+		var err error
+		_, cfg.TrustedSubnetCIDR, err = net.ParseCIDR(cfg.TrustedSubnet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse trusted subnet: %w", err)
+		}
+	}
+
+	if cfg.CryptoKeyPath != "" {
 		var err error
 		cfg.CryptoKey, err = cert.LoadPrivateKey(cfg.CryptoKeyPath)
 		if err != nil {
